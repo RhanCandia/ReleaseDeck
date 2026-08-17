@@ -533,7 +533,7 @@ function ReleaseDeckContent() {
 
 export default definePlugin(() => {
   return {
-    name: "ReleaseDeck",
+    name: "Release Deck",
     icon: <FaGithub />,
     content: <ReleaseDeckContent />,
   };

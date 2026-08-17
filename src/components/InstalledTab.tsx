@@ -93,7 +93,7 @@ export function InstalledTab({
       const updatedList = await Api.checkAllUpdates();
       const updateCount = updatedList.filter((p) => p.has_update).length;
       toaster.toast({
-        title: "ReleaseDeck",
+        title: "Release Deck",
         body: updateCount > 0
           ? `Found ${updateCount} update(s) available!`
           : "All packages are up to date.",
@@ -180,7 +180,7 @@ export function InstalledTab({
   const handleUpgrade = async (pkg: InstalledPackage) => {
     setUpgradingId(pkg.id);
     toaster.toast({
-      title: "ReleaseDeck",
+      title: "Release Deck",
       body: `Updating ${pkg.name || pkg.repository}...`,
     });
 
@@ -218,7 +218,7 @@ export function InstalledTab({
       const res = await Api.uninstallPackage(pkg.id, true);
       if (res.success) {
         toaster.toast({
-          title: "ReleaseDeck",
+          title: "Release Deck",
           body: `Deleted ${pkg.name || pkg.repository}.`,
         });
         onRefresh();

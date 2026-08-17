@@ -7,7 +7,7 @@ import {
   ProgressBar,
 } from "@decky/ui";
 import { toaster } from "@decky/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FaDownload,
   FaLinux,
@@ -73,6 +73,21 @@ export function DownloadTab({
   const [isInitiatingDownload, setIsInitiatingDownload] = useState<boolean>(false);
   const [lastInstalledName, setLastInstalledName] = useState<string | null>(null);
 
+  const topRef = useRef<HTMLDivElement>(null);
+
+  const scrollToTop = () => {
+    if (topRef.current) {
+      topRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    try {
+      const scrollContainer =
+        document.querySelector('[class*="quickaccess_"]') ||
+        document.querySelector('[class*="gamepadpage"]') ||
+        window;
+      scrollContainer?.scrollTo?.({ top: 0, behavior: "smooth" });
+    } catch (e) {}
+  };
+
   // Helper to extract file extension
   const getFileBadge = (filename: string) => {
     const lower = filename.toLowerCase();
@@ -127,10 +142,15 @@ export function DownloadTab({
     const displayName = repo.split("/")[1] || release.name || repo;
     setIsInitiatingDownload(true);
     setLastInstalledName(null);
+    setErrorMessage(null);
 
     onDownloadStarted();
+    setTimeout(() => {
+      scrollToTop();
+    }, 50);
+
     toaster.toast({
-      title: "ReleaseDeck",
+      title: "Release Deck",
       body: `Downloading ${displayName} (${release.tag_name})...`,
     });
 
@@ -146,7 +166,7 @@ export function DownloadTab({
       if (res.success) {
         setLastInstalledName(displayName);
         toaster.toast({
-          title: "ReleaseDeck",
+          title: "Release Deck",
           body: `Successfully installed ${displayName}!`,
         });
         onInstalledRefresh();
@@ -171,7 +191,7 @@ export function DownloadTab({
     await Api.cancelDownload();
     setIsInitiatingDownload(false);
     toaster.toast({
-      title: "ReleaseDeck",
+      title: "Release Deck",
       body: "Download cancelled.",
     });
   };
@@ -181,6 +201,12 @@ export function DownloadTab({
     (downloadProgress &&
       downloadProgress.status !== "complete" &&
       downloadProgress.status !== "error");
+
+  useEffect(() => {
+    if (isDownloading) {
+      scrollToTop();
+    }
+  }, [isDownloading]);
 
   // Reset to repos list if current repo is deleted from Settings
   useEffect(() => {
@@ -516,6 +542,7 @@ export function DownloadTab({
 
   return (
     <PanelSection title="Download Package">
+      <div ref={topRef} />
       {/* Navigation Breadcrumbs */}
       <PanelSectionRow>
         <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -560,7 +587,10 @@ export function DownloadTab({
             </div>
             <DialogButton
               className="rd-card-btn rd-card-btn-launch"
-              onClick={() => onInstalledRefresh()}
+              onClick={() => {
+                onInstalledRefresh();
+                onNavigateToApps();
+              }}
               style={{ padding: "4px 8px", fontSize: "10px", height: "auto" }}
             >
               <span>View in Apps ➔</span>
@@ -874,7 +904,10 @@ export function DownloadTab({
                       </DialogButton>
                       <DialogButton
                         className="rd-card-btn rd-card-btn-launch"
-                        onClick={onNavigateToApps}
+                        onClick={() => {
+                          onInstalledRefresh();
+                          onNavigateToApps();
+                        }}
                         style={{
                           width: "100%",
                           padding: "8px 12px",

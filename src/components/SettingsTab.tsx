@@ -63,7 +63,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
         onSettingsSaved(res.settings);
         setSaveSuccess(true);
         toaster.toast({
-          title: "ReleaseDeck",
+          title: "Release Deck",
           body: "Settings saved successfully!",
         });
         setTimeout(() => setSaveSuccess(false), 3000);
@@ -127,7 +127,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
     // Auto-save on removal
     await saveConfig(updated);
     toaster.toast({
-      title: "ReleaseDeck",
+      title: "Release Deck",
       body: `Removed ${repoToRemove}.`,
     });
   };
