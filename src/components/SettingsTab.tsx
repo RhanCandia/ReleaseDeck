@@ -7,7 +7,7 @@ import {
 } from "@decky/ui";
 import { toaster } from "@decky/api";
 import { useState, useEffect } from "react";
-import { FaSave, FaPlus, FaTrash, FaInfoCircle } from "react-icons/fa";
+import { FaSave, FaPlus, FaTrash, FaInfoCircle, FaFolder } from "react-icons/fa";
 import { Api } from "../api";
 import { PluginSettings } from "../types";
 
@@ -21,6 +21,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
   const [installDir, setInstallDir] = useState<string>("~/Applications");
   const [newRepo, setNewRepo] = useState<string>("");
   const [pinnedRepos, setPinnedRepos] = useState<string[]>([]);
+  const [focusedRepo, setFocusedRepo] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
@@ -70,6 +71,10 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
   const handleRemovePinnedRepo = (repoToRemove: string) => {
     const updated = pinnedRepos.filter((r) => r !== repoToRemove);
     setPinnedRepos(updated);
+    toaster.toast({
+      title: "ReleaseDeck",
+      body: `Removed ${repoToRemove}. Remember to Save Settings.`,
+    });
   };
 
   return (
@@ -97,62 +102,102 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
         </div>
       </PanelSectionRow>
 
-      {/* Favorite Repositories Header (No 2-Column Field component) */}
+      {/* Saved Repositories Header */}
       <PanelSectionRow>
         <div style={{ width: "100%", boxSizing: "border-box" }}>
-          <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>
-            Favorite Repositories ({pinnedRepos.length})
+          <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "4px" }}>
+            Saved Repositories ({pinnedRepos.length})
           </div>
 
           {pinnedRepos.length === 0 ? (
             <div style={{ fontSize: "11px", opacity: 0.6, fontStyle: "italic", marginBottom: "8px" }}>
-              No favorite repositories added yet.
+              No saved repositories added yet.
             </div>
           ) : (
-            <Focusable
-              flow-children="vertical"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
-                width: "100%",
-                boxSizing: "border-box",
-                marginBottom: "8px",
-              }}
-            >
-              {pinnedRepos.map((repo) => (
-                <Focusable
-                  key={repo}
-                  flow-children="horizontal"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "6px 8px",
-                    borderRadius: "4px",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    fontSize: "11px",
-                    boxSizing: "border-box",
-                    width: "100%",
-                  }}
-                >
-                  <span style={{ wordBreak: "break-all", flex: 1, marginRight: "6px" }}>{repo}</span>
-                  <span
-                    style={{ cursor: "pointer", color: "#ff6b6b", padding: "2px 6px", flexShrink: 0 }}
-                    onClick={() => handleRemovePinnedRepo(repo)}
-                  >
-                    <FaTrash />
-                  </span>
-                </Focusable>
-              ))}
-            </Focusable>
+            <div style={{ marginBottom: "8px" }}>
+              <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "3px" }}>
+                Press (A) to delete repository:
+              </div>
+              <Focusable
+                flow-children="vertical"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "3px",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              >
+                {pinnedRepos.map((repo) => {
+                  const isFocused = focusedRepo === repo;
+                  return (
+                    <Focusable
+                      key={repo}
+                      onFocus={() => setFocusedRepo(repo)}
+                      onBlur={() => setFocusedRepo((current) => (current === repo ? null : current))}
+                      onActivate={() => handleRemovePinnedRepo(repo)}
+                      onClick={() => handleRemovePinnedRepo(repo)}
+                      style={{
+                        padding: "5px 8px",
+                        borderRadius: "4px",
+                        backgroundColor: isFocused ? "#1a9fff" : "rgba(255, 255, 255, 0.04)",
+                        border: isFocused ? "1px solid #ffffff" : "1px solid transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
+                        width: "100%",
+                        boxSizing: "border-box",
+                        transition: "background-color 0.15s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
+                        <FaFolder
+                          style={{
+                            color: isFocused ? "#ffffff" : "#74c0fc",
+                            flexShrink: 0,
+                            fontSize: "10px",
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: isFocused ? "bold" : "normal",
+                            color: "#ffffff",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {repo}
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          fontSize: "10px",
+                          color: isFocused ? "#ffffff" : "#ff6b6b",
+                          flexShrink: 0,
+                          opacity: isFocused ? 1 : 0.85,
+                        }}
+                      >
+                        <FaTrash size={10} />
+                        <span>Delete</span>
+                      </div>
+                    </Focusable>
+                  );
+                })}
+              </Focusable>
+            </div>
           )}
 
           {/* Add New Repo Input & Button */}
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }}>
             <TextField
-              label="Add Favorite Repo"
+              label="Add Repository"
               description="Format: owner/repo"
               value={newRepo}
               onChange={(e) => setNewRepo(e.target.value)}
@@ -163,7 +208,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
               onClick={handleAddPinnedRepo}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
-                <FaPlus /> Add to Favorites
+                <FaPlus /> Add Repository
               </div>
             </ButtonItem>
           </div>

@@ -115,6 +115,8 @@ function FaGithub (props) {
   return GenIcon({"attr":{"viewBox":"0 0 512 512"},"child":[{"tag":"path","attr":{"d":"M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"},"child":[]}]})(props);
 }function FaPlus (props) {
   return GenIcon({"attr":{"viewBox":"0 0 448 512"},"child":[{"tag":"path","attr":{"d":"M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"},"child":[]}]})(props);
+}function FaRedo (props) {
+  return GenIcon({"attr":{"viewBox":"0 0 512 512"},"child":[{"tag":"path","attr":{"d":"M500.33 0h-47.41a12 12 0 0 0-12 12.57l4 82.76A247.42 247.42 0 0 0 256 8C119.34 8 7.9 119.53 8 256.19 8.1 393.07 119.1 504 256 504a247.1 247.1 0 0 0 166.18-63.91 12 12 0 0 0 .48-17.43l-34-34a12 12 0 0 0-16.38-.55A176 176 0 1 1 402.1 157.8l-101.53-4.87a12 12 0 0 0-12.57 12v47.41a12 12 0 0 0 12 12h200.33a12 12 0 0 0 12-12V12a12 12 0 0 0-12-12z"},"child":[]}]})(props);
 }function FaSave (props) {
   return GenIcon({"attr":{"viewBox":"0 0 448 512"},"child":[{"tag":"path","attr":{"d":"M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z"},"child":[]}]})(props);
 }function FaStar (props) {
@@ -174,11 +176,11 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
     const [focusedAssetId, setFocusedAssetId] = SP_REACT.useState(null);
     const [showChangelog, setShowChangelog] = SP_REACT.useState(false);
     // Fetch releases on demand when entering a repository
-    const loadRepoVersions = async (repo) => {
+    const loadRepoVersions = async (repo, force = false) => {
         setCurrentStep({ type: "versions", repo });
         setErrorMessage(null);
-        // If already cached, don't re-fetch
-        if (releasesCache[repo] && releasesCache[repo].length > 0) {
+        // If already cached and not forced, don't re-fetch
+        if (!force && releasesCache[repo] && releasesCache[repo].length > 0) {
             return;
         }
         setIsLoadingReleases(true);
@@ -278,7 +280,7 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                             gap: "8px",
                             width: "100%",
                             boxSizing: "border-box",
-                        }, children: [SP_JSX.jsx(FaStar, { size: 26, color: "#ffd43b" }), SP_JSX.jsx("div", { style: { fontSize: "13px", fontWeight: "bold" }, children: "No Repositories Added Yet" }), SP_JSX.jsx("div", { style: { fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }, children: "Add your favorite GitHub repositories in Settings to browse and download releases." }), SP_JSX.jsx("div", { style: { marginTop: "6px", width: "100%" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: onNavigateToSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaCog, {}), " Open Settings & Add Repos"] }) }) })] }) }) }));
+                        }, children: [SP_JSX.jsx(FaStar, { size: 26, color: "#ffd43b" }), SP_JSX.jsx("div", { style: { fontSize: "13px", fontWeight: "bold" }, children: "No Repositories Added Yet" }), SP_JSX.jsx("div", { style: { fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }, children: "Add GitHub repositories in Settings to browse and download releases." }), SP_JSX.jsx("div", { style: { marginTop: "6px", width: "100%" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: onNavigateToSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaCog, {}), " Open Settings & Add Repos"] }) }) })] }) }) }));
         }
         return (SP_JSX.jsx(DFL.PanelSection, { title: "Repositories", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { width: "100%", display: "flex", flexDirection: "column", gap: "4px" }, children: [SP_JSX.jsx("div", { style: { fontSize: "11px", opacity: 0.7, marginBottom: "2px" }, children: "Select a repository to view releases:" }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }, children: pinnedRepos.map((repo) => (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => loadRepoVersions(repo), children: SP_JSX.jsxs("div", { style: {
                                         display: "flex",
@@ -290,7 +292,7 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                                     }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "6px", wordBreak: "break-all", textAlign: "left" }, children: [SP_JSX.jsx(FaFolder, { style: { flexShrink: 0, color: "#74c0fc" } }), SP_JSX.jsx("span", { children: repo })] }), SP_JSX.jsx("span", { style: { fontSize: "11px", opacity: 0.6, flexShrink: 0 }, children: "\u2794" })] }) }, repo))) })] }) }) }));
     }
     // ==========================================
-    // VIEW 2: VERSIONS LIST (SLEEK TEXT LINKS WITH CRISP FOCUS)
+    // VIEW 2: VERSIONS LIST (WITH RETRY BUTTON)
     // ==========================================
     if (currentStep.type === "versions") {
         const { repo } = currentStep;
@@ -303,18 +305,18 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                                     fontWeight: "bold",
                                     wordBreak: "break-all",
                                 }, children: ["\uD83D\uDCC1 ", repo] })] }) }), isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(DFL.Spinner, {}), SP_JSX.jsx("span", { children: "Fetching versions..." })] }) })), errorMessage && !isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
-                            padding: "6px 8px",
+                            padding: "8px",
                             borderRadius: "4px",
                             backgroundColor: "rgba(220, 53, 69, 0.2)",
                             color: "#ff6b6b",
                             fontSize: "11px",
                             display: "flex",
-                            alignItems: "center",
+                            flexDirection: "column",
                             gap: "6px",
                             wordBreak: "break-word",
                             width: "100%",
                             boxSizing: "border-box",
-                        }, children: [SP_JSX.jsx(FaExclamationTriangle, { style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: errorMessage })] }) })), !isLoadingReleases && releases.length > 0 && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { width: "100%", display: "flex", flexDirection: "column", gap: "2px" }, children: [SP_JSX.jsx("div", { style: { fontSize: "10px", opacity: 0.65, marginBottom: "2px" }, children: "Select a Version:" }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "2px", width: "100%", boxSizing: "border-box" }, children: releases.map((rel, index) => {
+                        }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "6px" }, children: [SP_JSX.jsx(FaExclamationTriangle, { style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: errorMessage })] }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => loadRepoVersions(repo, true), children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaRedo, {}), " Retry Fetching Versions"] }) })] }) })), !isLoadingReleases && releases.length > 0 && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { width: "100%", display: "flex", flexDirection: "column", gap: "2px" }, children: [SP_JSX.jsx("div", { style: { fontSize: "10px", opacity: 0.65, marginBottom: "2px" }, children: "Select a Version:" }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "2px", width: "100%", boxSizing: "border-box" }, children: releases.map((rel, index) => {
                                     const isFocused = focusedVersionId === rel.id;
                                     return (SP_JSX.jsxs(DFL.Focusable, { onFocus: () => setFocusedVersionId(rel.id), onBlur: () => setFocusedVersionId((current) => (current === rel.id ? null : current)), onActivate: () => handleSelectRelease(repo, rel), onClick: () => handleSelectRelease(repo, rel), style: {
                                             padding: "5px 8px",
@@ -589,6 +591,7 @@ function SettingsTab({ settings, onSettingsSaved }) {
     const [installDir, setInstallDir] = SP_REACT.useState("~/Applications");
     const [newRepo, setNewRepo] = SP_REACT.useState("");
     const [pinnedRepos, setPinnedRepos] = SP_REACT.useState([]);
+    const [focusedRepo, setFocusedRepo] = SP_REACT.useState(null);
     const [isSaving, setIsSaving] = SP_REACT.useState(false);
     SP_REACT.useEffect(() => {
         if (settings) {
@@ -636,26 +639,52 @@ function SettingsTab({ settings, onSettingsSaved }) {
     const handleRemovePinnedRepo = (repoToRemove) => {
         const updated = pinnedRepos.filter((r) => r !== repoToRemove);
         setPinnedRepos(updated);
+        toaster.toast({
+            title: "ReleaseDeck",
+            body: `Removed ${repoToRemove}. Remember to Save Settings.`,
+        });
     };
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Settings", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Personal Access Token", description: "Optional: Prevents 403 API rate limits", value: token, onChange: (e) => setToken(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "Default Install Directory", value: installDir, onChange: (e) => setInstallDir(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { width: "100%", boxSizing: "border-box" }, children: [SP_JSX.jsxs("div", { style: { fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }, children: ["Favorite Repositories (", pinnedRepos.length, ")"] }), pinnedRepos.length === 0 ? (SP_JSX.jsx("div", { style: { fontSize: "11px", opacity: 0.6, fontStyle: "italic", marginBottom: "8px" }, children: "No favorite repositories added yet." })) : (SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: {
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "4px",
-                                width: "100%",
-                                boxSizing: "border-box",
-                                marginBottom: "8px",
-                            }, children: pinnedRepos.map((repo) => (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "horizontal", style: {
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    padding: "6px 8px",
-                                    borderRadius: "4px",
-                                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                                    fontSize: "11px",
-                                    boxSizing: "border-box",
-                                    width: "100%",
-                                }, children: [SP_JSX.jsx("span", { style: { wordBreak: "break-all", flex: 1, marginRight: "6px" }, children: repo }), SP_JSX.jsx("span", { style: { cursor: "pointer", color: "#ff6b6b", padding: "2px 6px", flexShrink: 0 }, onClick: () => handleRemovePinnedRepo(repo), children: SP_JSX.jsx(FaTrash, {}) })] }, repo))) })), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }, children: [SP_JSX.jsx(DFL.TextField, { label: "Add Favorite Repo", description: "Format: owner/repo", value: newRepo, onChange: (e) => setNewRepo(e.target.value) }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: !newRepo.trim(), onClick: handleAddPinnedRepo, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaPlus, {}), " Add to Favorites"] }) })] })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isSaving, onClick: handleSaveSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaSave, {}), isSaving ? "Saving..." : "Save Settings"] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "10px", opacity: 0.6, lineHeight: "1.3", wordBreak: "break-word", padding: "4px 0" }, children: [SP_JSX.jsx(FaInfoCircle, {}), " Classic GitHub tokens need no special permissions."] }) })] }));
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Settings", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Personal Access Token", description: "Optional: Prevents 403 API rate limits", value: token, onChange: (e) => setToken(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "Default Install Directory", value: installDir, onChange: (e) => setInstallDir(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { width: "100%", boxSizing: "border-box" }, children: [SP_JSX.jsxs("div", { style: { fontSize: "12px", fontWeight: "bold", marginBottom: "4px" }, children: ["Saved Repositories (", pinnedRepos.length, ")"] }), pinnedRepos.length === 0 ? (SP_JSX.jsx("div", { style: { fontSize: "11px", opacity: 0.6, fontStyle: "italic", marginBottom: "8px" }, children: "No saved repositories added yet." })) : (SP_JSX.jsxs("div", { style: { marginBottom: "8px" }, children: [SP_JSX.jsx("div", { style: { fontSize: "10px", opacity: 0.65, marginBottom: "3px" }, children: "Press (A) to delete repository:" }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: {
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "3px",
+                                        width: "100%",
+                                        boxSizing: "border-box",
+                                    }, children: pinnedRepos.map((repo) => {
+                                        const isFocused = focusedRepo === repo;
+                                        return (SP_JSX.jsxs(DFL.Focusable, { onFocus: () => setFocusedRepo(repo), onBlur: () => setFocusedRepo((current) => (current === repo ? null : current)), onActivate: () => handleRemovePinnedRepo(repo), onClick: () => handleRemovePinnedRepo(repo), style: {
+                                                padding: "5px 8px",
+                                                borderRadius: "4px",
+                                                backgroundColor: isFocused ? "#1a9fff" : "rgba(255, 255, 255, 0.04)",
+                                                border: isFocused ? "1px solid #ffffff" : "1px solid transparent",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                cursor: "pointer",
+                                                width: "100%",
+                                                boxSizing: "border-box",
+                                                transition: "background-color 0.15s ease",
+                                            }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }, children: [SP_JSX.jsx(FaFolder, { style: {
+                                                                color: isFocused ? "#ffffff" : "#74c0fc",
+                                                                flexShrink: 0,
+                                                                fontSize: "10px",
+                                                            } }), SP_JSX.jsx("span", { style: {
+                                                                fontSize: "11px",
+                                                                fontWeight: isFocused ? "bold" : "normal",
+                                                                color: "#ffffff",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                whiteSpace: "nowrap",
+                                                            }, children: repo })] }), SP_JSX.jsxs("div", { style: {
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "4px",
+                                                        fontSize: "10px",
+                                                        color: isFocused ? "#ffffff" : "#ff6b6b",
+                                                        flexShrink: 0,
+                                                        opacity: isFocused ? 1 : 0.85,
+                                                    }, children: [SP_JSX.jsx(FaTrash, { size: 10 }), SP_JSX.jsx("span", { children: "Delete" })] })] }, repo));
+                                    }) })] })), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }, children: [SP_JSX.jsx(DFL.TextField, { label: "Add Repository", description: "Format: owner/repo", value: newRepo, onChange: (e) => setNewRepo(e.target.value) }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: !newRepo.trim(), onClick: handleAddPinnedRepo, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaPlus, {}), " Add Repository"] }) })] })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isSaving, onClick: handleSaveSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaSave, {}), isSaving ? "Saving..." : "Save Settings"] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "10px", opacity: 0.6, lineHeight: "1.3", wordBreak: "break-word", padding: "4px 0" }, children: [SP_JSX.jsx(FaInfoCircle, {}), " Classic GitHub tokens need no special permissions."] }) })] }));
 }
 
 function ReleaseDeckContent() {

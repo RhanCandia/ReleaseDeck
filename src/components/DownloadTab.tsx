@@ -21,6 +21,7 @@ import {
   FaBoxOpen,
   FaDotCircle,
   FaRegCircle,
+  FaRedo,
 } from "react-icons/fa";
 import { Api } from "../api";
 import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings } from "../types";
@@ -63,12 +64,12 @@ export function DownloadTab({
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
 
   // Fetch releases on demand when entering a repository
-  const loadRepoVersions = async (repo: string) => {
+  const loadRepoVersions = async (repo: string, force = false) => {
     setCurrentStep({ type: "versions", repo });
     setErrorMessage(null);
 
-    // If already cached, don't re-fetch
-    if (releasesCache[repo] && releasesCache[repo].length > 0) {
+    // If already cached and not forced, don't re-fetch
+    if (!force && releasesCache[repo] && releasesCache[repo].length > 0) {
       return;
     }
 
@@ -183,7 +184,7 @@ export function DownloadTab({
               <FaStar size={26} color="#ffd43b" />
               <div style={{ fontSize: "13px", fontWeight: "bold" }}>No Repositories Added Yet</div>
               <div style={{ fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }}>
-                Add your favorite GitHub repositories in Settings to browse and download releases.
+                Add GitHub repositories in Settings to browse and download releases.
               </div>
               <div style={{ marginTop: "6px", width: "100%" }}>
                 <ButtonItem layout="below" onClick={onNavigateToSettings}>
@@ -241,7 +242,7 @@ export function DownloadTab({
   }
 
   // ==========================================
-  // VIEW 2: VERSIONS LIST (SLEEK TEXT LINKS WITH CRISP FOCUS)
+  // VIEW 2: VERSIONS LIST (WITH RETRY BUTTON)
   // ==========================================
   if (currentStep.type === "versions") {
     const { repo } = currentStep;
@@ -285,26 +286,36 @@ export function DownloadTab({
           </PanelSectionRow>
         )}
 
-        {/* Error Message */}
+        {/* Error Message with Retry Button */}
         {errorMessage && !isLoadingReleases && (
           <PanelSectionRow>
             <div
               style={{
-                padding: "6px 8px",
+                padding: "8px",
                 borderRadius: "4px",
                 backgroundColor: "rgba(220, 53, 69, 0.2)",
                 color: "#ff6b6b",
                 fontSize: "11px",
                 display: "flex",
-                alignItems: "center",
+                flexDirection: "column",
                 gap: "6px",
                 wordBreak: "break-word",
                 width: "100%",
                 boxSizing: "border-box",
               }}
             >
-              <FaExclamationTriangle style={{ flexShrink: 0 }} />
-              <span>{errorMessage}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <FaExclamationTriangle style={{ flexShrink: 0 }} />
+                <span>{errorMessage}</span>
+              </div>
+              <ButtonItem
+                layout="below"
+                onClick={() => loadRepoVersions(repo, true)}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
+                  <FaRedo /> Retry Fetching Versions
+                </div>
+              </ButtonItem>
             </div>
           </PanelSectionRow>
         )}
