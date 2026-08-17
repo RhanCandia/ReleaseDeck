@@ -102,6 +102,8 @@ def find_executable(install_path: str) -> Optional[str]:
         for f in sorted(os.listdir(install_path)):
             full = os.path.join(install_path, f)
             if os.path.isfile(full) and not f.startswith(".") and not f.endswith((".dll", ".so", ".json", ".txt", ".md", ".png", ".jpg", ".svg", ".log", ".ttf", ".rcss")):
+                if f.lower().endswith(".exe"):
+                    return full
                 if f.endswith(".bin") or is_elf_executable(full) or os.access(full, os.X_OK):
                     make_executable(full)
                     return full
@@ -112,6 +114,8 @@ def find_executable(install_path: str) -> Optional[str]:
                 full = os.path.join(root, f)
                 if f.startswith(".") or f.endswith((".dll", ".so", ".json", ".txt", ".md", ".png", ".jpg", ".svg", ".log", ".ttf", ".rcss")):
                     continue
+                if f.lower().endswith(".exe"):
+                    return full
                 if f.endswith(".AppImage") or f.endswith(".sh") or f.endswith(".bin") or is_elf_executable(full) or os.access(full, os.X_OK):
                     make_executable(full)
                     return full
@@ -293,9 +297,9 @@ def create_app_launcher(install_path: str, display_name: str, target_exe: Option
     if not clean_name:
         clean_name = os.path.basename(install_path)
 
-    # If the executable is an AppImage or already named with the clean name, return it
+    # If the executable is an AppImage, Windows .exe, or already named with the clean name, return it directly
     base = os.path.basename(exe_path)
-    if base.lower() == clean_name.lower().replace(" ", "") or base.lower().endswith(".appimage"):
+    if base.lower() == clean_name.lower().replace(" ", "") or base.lower().endswith((".appimage", ".exe")):
         return exe_path
 
     # Create an executable launcher script named after the app
