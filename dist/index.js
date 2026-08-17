@@ -181,7 +181,6 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
             if (res.success && res.releases && res.releases.length > 0) {
                 setReleases(res.releases);
                 setSelectedReleaseIndex(0);
-                // Auto-select the first recommended asset in the latest release
                 const firstRel = res.releases[0];
                 const recommended = firstRel.assets.find((a) => a.is_recommended) || firstRel.assets[0];
                 if (recommended) {
@@ -235,7 +234,7 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
             if (res.success) {
                 toaster.toast({
                     title: "ReleaseDeck",
-                    body: `Successfully installed ${displayName} to ${res.install_path}!`,
+                    body: `Successfully installed ${displayName}!`,
                 });
                 setStatusMessage({ type: "success", text: `Installed ${displayName} successfully!` });
                 onInstalledRefresh();
@@ -262,13 +261,16 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
     const isDownloadingThisRepo = downloadProgress &&
         downloadProgress.status !== "complete" &&
         downloadProgress.status !== "error";
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Download Release Package", children: [pinnedRepos.length > 0 && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Dropdown, { menuLabel: "Quick Select Favorite", rgOptions: pinnedRepos.map((r) => ({ data: r, label: r })), selectedOption: pinnedRepos.includes(repoInput) ? repoInput : undefined, onChange: (item) => {
-                        setRepoInput(item.data);
-                        handleFetchReleases(item.data);
-                    } }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Repository (owner/repo)", value: repoInput, onChange: (e) => setRepoInput(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isLoadingReleases || !!isDownloadingThisRepo, onClick: () => handleFetchReleases(), children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }, children: [SP_JSX.jsx(FaGithub, {}), isLoadingReleases ? "Querying GitHub..." : "Fetch Releases"] }) }) }), isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "12px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), statusMessage && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
-                        padding: "8px 12px",
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Download", children: [pinnedRepos.length > 0 && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.Dropdown, { menuLabel: "Quick Select Favorite", rgOptions: pinnedRepos.map((r) => ({ data: r, label: r })), selectedOption: pinnedRepos.includes(repoInput) ? repoInput : undefined, onChange: (item) => {
+                            setRepoInput(item.data);
+                            handleFetchReleases(item.data);
+                        } }) }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Repository (owner/repo)", value: repoInput, onChange: (e) => setRepoInput(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isLoadingReleases || !!isDownloadingThisRepo, onClick: () => handleFetchReleases(), children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaGithub, {}), isLoadingReleases ? "Querying GitHub..." : "Fetch Releases"] }) }) }), isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "10px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), statusMessage && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
+                        padding: "6px 10px",
                         borderRadius: "4px",
-                        fontSize: "12px",
+                        fontSize: "11px",
+                        boxSizing: "border-box",
+                        width: "100%",
+                        wordBreak: "break-word",
                         backgroundColor: statusMessage.type === "error"
                             ? "rgba(220, 53, 69, 0.2)"
                             : statusMessage.type === "success"
@@ -282,31 +284,39 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
-                    }, children: [statusMessage.type === "error" && SP_JSX.jsx(FaExclamationTriangle, {}), statusMessage.type === "success" && SP_JSX.jsx(FaCheckCircle, {}), statusMessage.text] }) })), isDownloadingThisRepo && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
-                        padding: "12px",
+                    }, children: [statusMessage.type === "error" && SP_JSX.jsx(FaExclamationTriangle, { style: { flexShrink: 0 } }), statusMessage.type === "success" && SP_JSX.jsx(FaCheckCircle, { style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: statusMessage.text })] }) })), isDownloadingThisRepo && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
+                        padding: "10px",
+                        boxSizing: "border-box",
+                        width: "100%",
                         backgroundColor: "rgba(0, 0, 0, 0.4)",
                         borderRadius: "6px",
                         border: "1px solid #1a9fff",
                         display: "flex",
                         flexDirection: "column",
-                        gap: "8px",
-                    }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: "13px", fontWeight: "bold" }, children: [SP_JSX.jsx("span", { children: downloadProgress?.status === "extracting" ? "📦 Extracting & Setting Permissions..." : "📥 Downloading..." }), SP_JSX.jsxs("span", { children: [downloadProgress?.percent || 0, "%"] })] }), SP_JSX.jsx(DFL.ProgressBar, { nProgress: downloadProgress?.percent || 0 }), SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: "11px", opacity: 0.8 }, children: [SP_JSX.jsxs("span", { children: ["Speed: ", downloadProgress?.speed_mb_s || 0, " MB/s"] }), SP_JSX.jsxs("span", { children: [formatBytes(downloadProgress?.downloaded || 0), " / ", formatBytes(downloadProgress?.total || 0)] })] }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: handleCancelDownload, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }, children: [SP_JSX.jsx(FaBan, {}), " Cancel Download"] }) })] }) })), releases.length > 0 && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Dropdown, { menuLabel: "Release Version", rgOptions: releases.map((rel, index) => ({
-                                data: index,
-                                label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre-release]" : ""}`,
-                            })), selectedOption: selectedReleaseIndex, onChange: (item) => handleSelectRelease(item.data) }) }), currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => setShowChangelog(!showChangelog), children: showChangelog ? "Hide Changelog" : "View Release Notes" }) })), showChangelog && currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
-                                maxHeight: "140px",
+                        gap: "6px",
+                    }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: "bold" }, children: [SP_JSX.jsx("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: "6px" }, children: downloadProgress?.status === "extracting" ? "📦 Extracting..." : "📥 Downloading..." }), SP_JSX.jsxs("span", { children: [downloadProgress?.percent || 0, "%"] })] }), SP_JSX.jsx(DFL.ProgressBar, { nProgress: downloadProgress?.percent || 0 }), SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: "10px", opacity: 0.8 }, children: [SP_JSX.jsxs("span", { children: [downloadProgress?.speed_mb_s || 0, " MB/s"] }), SP_JSX.jsxs("span", { children: [formatBytes(downloadProgress?.downloaded || 0), " / ", formatBytes(downloadProgress?.total || 0)] })] }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: handleCancelDownload, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaBan, {}), " Cancel"] }) })] }) })), releases.length > 0 && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.Dropdown, { menuLabel: "Release Version", rgOptions: releases.map((rel, index) => ({
+                                    data: index,
+                                    label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre]" : ""}`,
+                                })), selectedOption: selectedReleaseIndex, onChange: (item) => handleSelectRelease(item.data) }) }) }), currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => setShowChangelog(!showChangelog), children: SP_JSX.jsx("span", { style: { fontSize: "11px" }, children: showChangelog ? "Hide Changelog" : "View Release Notes" }) }) })), showChangelog && currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
+                                maxHeight: "120px",
                                 overflowY: "auto",
-                                padding: "8px",
+                                overflowX: "hidden",
+                                padding: "6px 8px",
+                                boxSizing: "border-box",
+                                width: "100%",
                                 backgroundColor: "rgba(0,0,0,0.3)",
                                 borderRadius: "4px",
-                                fontSize: "11px",
+                                fontSize: "10px",
                                 whiteSpace: "pre-wrap",
-                                lineHeight: "1.4",
+                                wordBreak: "break-word",
+                                lineHeight: "1.3",
                                 opacity: 0.85,
-                            }, children: currentRelease.body }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Available Packages & Binaries", children: SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }, children: currentRelease?.assets.map((asset) => {
+                            }, children: currentRelease.body }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Available Packages", children: SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box", marginTop: "4px" }, children: currentRelease?.assets.map((asset) => {
                                     const isSelected = asset.id === selectedAssetId;
                                     return (SP_JSX.jsxs(DFL.Focusable, { onActivate: () => setSelectedAssetId(asset.id), onClick: () => setSelectedAssetId(asset.id), style: {
-                                            padding: "8px 10px",
+                                            padding: "6px 8px",
+                                            boxSizing: "border-box",
+                                            width: "100%",
                                             borderRadius: "4px",
                                             backgroundColor: isSelected ? "rgba(26, 159, 255, 0.3)" : "rgba(255, 255, 255, 0.05)",
                                             border: isSelected ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
@@ -314,19 +324,18 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                                             display: "flex",
                                             flexDirection: "column",
                                             gap: "2px",
-                                        }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [SP_JSX.jsxs("span", { style: { fontSize: "12px", fontWeight: isSelected ? "bold" : "normal", wordBreak: "break-all" }, children: [isSelected ? "● " : "○ ", " ", asset.name] }), asset.is_recommended && (SP_JSX.jsxs("span", { style: {
-                                                            fontSize: "10px",
+                                        }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "4px" }, children: [SP_JSX.jsxs("span", { style: { fontSize: "11px", fontWeight: isSelected ? "bold" : "normal", wordBreak: "break-all", flex: 1 }, children: [isSelected ? "● " : "○ ", " ", asset.name] }), asset.is_recommended && (SP_JSX.jsxs("span", { style: {
+                                                            fontSize: "9px",
                                                             backgroundColor: "#2b8a3e",
                                                             color: "#fff",
-                                                            padding: "2px 6px",
+                                                            padding: "1px 5px",
                                                             borderRadius: "3px",
                                                             display: "flex",
                                                             alignItems: "center",
-                                                            gap: "4px",
+                                                            gap: "3px",
                                                             flexShrink: 0,
-                                                            marginLeft: "6px",
-                                                        }, children: [SP_JSX.jsx(FaLinux, {}), " Recommended"] }))] }), SP_JSX.jsxs("span", { style: { fontSize: "11px", opacity: 0.65 }, children: ["Size: ", formatBytes(asset.size)] })] }, asset.id));
-                                }) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.7, padding: "4px 0" }, children: ["Target Directory: ", SP_JSX.jsxs("code", { children: ["~/Applications/", repoInput.split("/")[1] || repoInput, "/"] })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: !selectedAsset || !!isDownloadingThisRepo, onClick: handleStartDownload, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }, children: [SP_JSX.jsx(FaDownload, {}), selectedAsset ? `Download & Extract ${formatBytes(selectedAsset.size)}` : "Select a Package Asset"] }) }) })] }))] }));
+                                                        }, children: [SP_JSX.jsx(FaLinux, {}), " Rec"] }))] }), SP_JSX.jsxs("span", { style: { fontSize: "10px", opacity: 0.65 }, children: ["Size: ", formatBytes(asset.size)] })] }, asset.id));
+                                }) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "10px", opacity: 0.7, padding: "2px 0", wordBreak: "break-all" }, children: ["Target: ", SP_JSX.jsxs("code", { children: ["~/Applications/", repoInput.split("/")[1] || repoInput, "/"] })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: !selectedAsset || !!isDownloadingThisRepo, onClick: handleStartDownload, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaDownload, {}), selectedAsset ? `Download & Extract (${formatBytes(selectedAsset.size)})` : "Select a Package Asset"] }) }) })] }))] }));
 }
 
 function InstalledTab({ packages, isLoading, onRefresh, onNavigateToDownload, }) {
@@ -390,7 +399,6 @@ function InstalledTab({ packages, isLoading, onRefresh, onNavigateToDownload, })
     };
     const handleUninstall = async (pkg) => {
         if (deletingId !== pkg.id) {
-            // First click: prompt confirmation state
             setDeletingId(pkg.id);
             return;
         }
@@ -399,7 +407,7 @@ function InstalledTab({ packages, isLoading, onRefresh, onNavigateToDownload, })
             if (res.success) {
                 toaster.toast({
                     title: "ReleaseDeck",
-                    body: `Uninstalled ${pkg.name} and deleted files.`,
+                    body: `Uninstalled ${pkg.name}.`,
                 });
                 onRefresh();
             }
@@ -420,15 +428,17 @@ function InstalledTab({ packages, isLoading, onRefresh, onNavigateToDownload, })
             setDeletingId(null);
         }
     };
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: `Installed Packages (${packages.length})`, children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isLoading || isCheckingUpdates, onClick: handleCheckUpdates, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }, children: [SP_JSX.jsx(FaSync, { className: isCheckingUpdates ? "spin-icon" : "" }), isCheckingUpdates ? "Checking GitHub..." : "Check for Updates"] }) }) }), isLoading && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "16px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), !isLoading && packages.length === 0 && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
-                        padding: "20px 12px",
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: `Installed (${packages.length})`, children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isLoading || isCheckingUpdates, onClick: handleCheckUpdates, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaSync, { className: isCheckingUpdates ? "spin-icon" : "" }), isCheckingUpdates ? "Checking..." : "Check for Updates"] }) }) }), isLoading && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "12px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), !isLoading && packages.length === 0 && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
+                        padding: "16px 8px",
                         textAlign: "center",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
-                        gap: "8px",
+                        gap: "6px",
                         opacity: 0.8,
-                    }, children: [SP_JSX.jsx(FaBoxOpen, { size: 32 }), SP_JSX.jsx("div", { style: { fontSize: "14px", fontWeight: "bold" }, children: "No Packages Installed Yet" }), SP_JSX.jsx("div", { style: { fontSize: "12px", opacity: 0.7 }, children: "Download game ports, tools, or emulators directly from GitHub." }), SP_JSX.jsx("div", { style: { marginTop: "8px", width: "100%" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: onNavigateToDownload, children: "Browse & Download Packages" }) })] }) })), !isLoading &&
+                        width: "100%",
+                        boxSizing: "border-box",
+                    }, children: [SP_JSX.jsx(FaBoxOpen, { size: 28 }), SP_JSX.jsx("div", { style: { fontSize: "13px", fontWeight: "bold" }, children: "No Packages Installed Yet" }), SP_JSX.jsx("div", { style: { fontSize: "11px", opacity: 0.7 }, children: "Download game ports and tools directly from GitHub." }), SP_JSX.jsx("div", { style: { marginTop: "6px", width: "100%" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: onNavigateToDownload, children: SP_JSX.jsx("span", { style: { fontSize: "11px" }, children: "Browse & Download" }) }) })] }) })), !isLoading &&
                 packages.map((pkg) => {
                     const isUpgrading = upgradingId === pkg.id;
                     const isConfirmingDelete = deletingId === pkg.id;
@@ -436,28 +446,31 @@ function InstalledTab({ packages, isLoading, onRefresh, onNavigateToDownload, })
                                 backgroundColor: "rgba(255, 255, 255, 0.05)",
                                 border: pkg.has_update ? "1px solid #f59f00" : "1px solid rgba(255, 255, 255, 0.1)",
                                 borderRadius: "6px",
-                                padding: "10px 12px",
+                                padding: "8px 10px",
                                 display: "flex",
                                 flexDirection: "column",
-                                gap: "8px",
+                                gap: "6px",
                                 width: "100%",
-                            }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" }, children: [SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontWeight: "bold", fontSize: "13px" }, children: pkg.name }), SP_JSX.jsx("div", { style: { fontSize: "11px", opacity: 0.65 }, children: pkg.repository })] }), pkg.has_update && (SP_JSX.jsxs("span", { style: {
+                                boxSizing: "border-box",
+                            }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }, children: [SP_JSX.jsxs("div", { style: { minWidth: 0, flex: 1 }, children: [SP_JSX.jsx("div", { style: { fontWeight: "bold", fontSize: "12px", wordBreak: "break-word" }, children: pkg.name }), SP_JSX.jsx("div", { style: { fontSize: "10px", opacity: 0.65, wordBreak: "break-all" }, children: pkg.repository })] }), pkg.has_update && (SP_JSX.jsxs("span", { style: {
                                                 backgroundColor: "#f59f00",
                                                 color: "#000",
-                                                fontSize: "10px",
+                                                fontSize: "9px",
                                                 fontWeight: "bold",
-                                                padding: "2px 6px",
+                                                padding: "1px 5px",
                                                 borderRadius: "3px",
                                                 display: "flex",
                                                 alignItems: "center",
-                                                gap: "4px",
-                                            }, children: [SP_JSX.jsx(FaExclamationCircle, {}), " Update"] }))] }), SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.8, display: "flex", flexDirection: "column", gap: "2px" }, children: [SP_JSX.jsxs("div", { children: ["Version: ", SP_JSX.jsx("strong", { children: pkg.installed_version }), pkg.has_update && (SP_JSX.jsxs("span", { style: { color: "#ffd43b", marginLeft: "4px" }, children: ["\u2794 ", SP_JSX.jsx("strong", { children: pkg.latest_version })] }))] }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "4px" }, children: [SP_JSX.jsx(FaHdd, {}), " Size: ", formatBytes(pkg.size_bytes)] }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "4px", wordBreak: "break-all" }, children: [SP_JSX.jsx(FaFolder, {}), " Path: ", SP_JSX.jsx("code", { children: pkg.install_path })] })] }), SP_JSX.jsxs("div", { style: { display: "flex", gap: "6px", marginTop: "4px" }, children: [pkg.has_update && (SP_JSX.jsx("div", { style: { flex: 1 }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isUpgrading, onClick: () => handleUpgrade(pkg), children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }, children: [SP_JSX.jsx(FaArrowUp, {}), isUpgrading ? "Updating..." : `Update to ${pkg.latest_version}`] }) }) })), SP_JSX.jsx("div", { style: { flex: pkg.has_update ? "none" : 1 }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => handleUninstall(pkg), children: SP_JSX.jsxs("div", { style: {
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        gap: "6px",
-                                                        color: isConfirmingDelete ? "#ff6b6b" : undefined,
-                                                    }, children: [SP_JSX.jsx(FaTrash, {}), isConfirmingDelete ? "Confirm Delete?" : "Uninstall"] }) }) })] })] }) }, pkg.id));
+                                                gap: "3px",
+                                                flexShrink: 0,
+                                            }, children: [SP_JSX.jsx(FaExclamationCircle, {}), " Update"] }))] }), SP_JSX.jsxs("div", { style: { fontSize: "10px", opacity: 0.8, display: "flex", flexDirection: "column", gap: "2px" }, children: [SP_JSX.jsxs("div", { children: ["Ver: ", SP_JSX.jsx("strong", { children: pkg.installed_version }), pkg.has_update && (SP_JSX.jsxs("span", { style: { color: "#ffd43b", marginLeft: "4px" }, children: ["\u2794 ", SP_JSX.jsx("strong", { children: pkg.latest_version })] }))] }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "4px" }, children: [SP_JSX.jsx(FaHdd, {}), " Size: ", formatBytes(pkg.size_bytes)] }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: "4px", wordBreak: "break-all" }, children: [SP_JSX.jsx(FaFolder, {}), " Path: ", SP_JSX.jsx("code", { children: pkg.install_path })] })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: "4px", marginTop: "2px" }, children: [pkg.has_update && (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isUpgrading, onClick: () => handleUpgrade(pkg), children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", fontSize: "11px" }, children: [SP_JSX.jsx(FaArrowUp, {}), isUpgrading ? "Updating..." : `Update to ${pkg.latest_version}`] }) })), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => handleUninstall(pkg), children: SP_JSX.jsxs("div", { style: {
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: "4px",
+                                                    fontSize: "11px",
+                                                    color: isConfirmingDelete ? "#ff6b6b" : undefined,
+                                                }, children: [SP_JSX.jsx(FaTrash, {}), isConfirmingDelete ? "Confirm Delete?" : "Uninstall"] }) })] })] }) }, pkg.id));
                 })] }));
 }
 
@@ -514,15 +527,24 @@ function SettingsTab({ settings, onSettingsSaved }) {
         const updated = pinnedRepos.filter((r) => r !== repoToRemove);
         setPinnedRepos(updated);
     };
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Settings & Configuration", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Personal Access Token", value: token, onChange: (e) => setToken(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.7, lineHeight: "1.4" }, children: [SP_JSX.jsx(FaInfoCircle, {}), " Adding a classic GitHub token (no permissions needed) prevents \"403 Rate Limit\" errors when browsing releases."] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Default Install Directory", value: installDir, onChange: (e) => setInstallDir(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Favorite Repositories", children: SP_JSX.jsxs(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "4px" }, children: [pinnedRepos.map((repo) => (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "horizontal", style: {
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Settings", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Personal Access Token", value: token, onChange: (e) => setToken(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.7, lineHeight: "1.3", wordBreak: "break-word" }, children: [SP_JSX.jsx(FaInfoCircle, {}), " Adding a classic GitHub token prevents \"403 Rate Limit\" errors."] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "Default Install Directory", value: installDir, onChange: (e) => setInstallDir(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Favorite Repositories", children: SP_JSX.jsxs(DFL.Focusable, { "flow-children": "vertical", style: {
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "6px",
+                            width: "100%",
+                            boxSizing: "border-box",
+                            marginTop: "4px",
+                        }, children: [pinnedRepos.map((repo) => (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "horizontal", style: {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
                                     padding: "6px 8px",
                                     borderRadius: "4px",
                                     backgroundColor: "rgba(255, 255, 255, 0.05)",
-                                    fontSize: "12px",
-                                }, children: [SP_JSX.jsx("span", { children: repo }), SP_JSX.jsx("span", { style: { cursor: "pointer", color: "#ff6b6b", padding: "2px 6px" }, onClick: () => handleRemovePinnedRepo(repo), children: SP_JSX.jsx(FaTrash, {}) })] }, repo))), SP_JSX.jsxs("div", { style: { display: "flex", gap: "6px", marginTop: "4px" }, children: [SP_JSX.jsx("div", { style: { flex: 1 }, children: SP_JSX.jsx(DFL.TextField, { label: "Add repo (owner/repo)", value: newRepo, onChange: (e) => setNewRepo(e.target.value) }) }), SP_JSX.jsx("div", { style: { alignSelf: "flex-end", marginBottom: "4px" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: handleAddPinnedRepo, children: SP_JSX.jsx(FaPlus, {}) }) })] })] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isSaving, onClick: handleSaveSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }, children: [SP_JSX.jsx(FaSave, {}), isSaving ? "Saving..." : "Save Settings"] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { textAlign: "center", fontSize: "11px", opacity: 0.5, padding: "8px" }, children: "ReleaseDeck v0.1.0-beta.2 \u2022 SteamOS Gaming Mode" }) })] }));
+                                    fontSize: "11px",
+                                    boxSizing: "border-box",
+                                    width: "100%",
+                                }, children: [SP_JSX.jsx("span", { style: { wordBreak: "break-all", flex: 1, marginRight: "6px" }, children: repo }), SP_JSX.jsx("span", { style: { cursor: "pointer", color: "#ff6b6b", padding: "4px", flexShrink: 0 }, onClick: () => handleRemovePinnedRepo(repo), children: SP_JSX.jsx(FaTrash, {}) })] }, repo))), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }, children: [SP_JSX.jsx(DFL.TextField, { label: "Add repo (owner/repo)", value: newRepo, onChange: (e) => setNewRepo(e.target.value) }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: handleAddPinnedRepo, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }, children: [SP_JSX.jsx(FaPlus, {}), " Add to Favorites"] }) })] })] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isSaving, onClick: handleSaveSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }, children: [SP_JSX.jsx(FaSave, {}), isSaving ? "Saving..." : "Save Settings"] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { textAlign: "center", fontSize: "10px", opacity: 0.5, padding: "4px 0" }, children: "ReleaseDeck v0.1.0-beta.2 \u2022 SteamOS Gaming Mode" }) })] }));
 }
 
 function ReleaseDeckContent() {
@@ -531,7 +553,6 @@ function ReleaseDeckContent() {
     const [isLoadingInstalled, setIsLoadingInstalled] = SP_REACT.useState(false);
     const [settings, setSettings] = SP_REACT.useState(null);
     const [downloadProgress, setDownloadProgress] = SP_REACT.useState(null);
-    // Load installed packages and settings on mount
     const refreshInstalled = async () => {
         setIsLoadingInstalled(true);
         try {
@@ -560,7 +581,6 @@ function ReleaseDeckContent() {
     SP_REACT.useEffect(() => {
         refreshInstalled();
         loadSettings();
-        // Listen to download progress events from the Python backend
         const progressListener = addEventListener("download_progress", (progress) => {
             setDownloadProgress(progress);
             if (progress.status === "complete") {
@@ -571,31 +591,51 @@ function ReleaseDeckContent() {
             removeEventListener("download_progress", progressListener);
         };
     }, []);
-    return (SP_JSX.jsxs("div", { style: { padding: "0 4px" }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "horizontal", style: {
+    return (SP_JSX.jsxs("div", { style: { width: "100%", maxWidth: "100%", boxSizing: "border-box", overflowX: "hidden" }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "horizontal", style: {
                     display: "flex",
-                    gap: "6px",
+                    gap: "4px",
                     width: "100%",
-                    marginBottom: "12px",
+                    boxSizing: "border-box",
+                    marginBottom: "10px",
                 }, children: [SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("installed"), style: {
                             flex: 1,
+                            minWidth: 0,
                             backgroundColor: activeTab === "installed" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
                             border: activeTab === "installed" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
-                            padding: "8px 4px",
-                            fontSize: "12px",
+                            padding: "6px 2px",
+                            fontSize: "11px",
                             height: "auto",
-                        }, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }, children: [SP_JSX.jsx(FaBox, {}), " Installed ", installedPackages.length > 0 ? `(${installedPackages.length})` : ""] }) }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("download"), style: {
+                        }, children: SP_JSX.jsxs("div", { style: {
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "4px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                            }, children: [SP_JSX.jsx(FaBox, { style: { flexShrink: 0 } }), SP_JSX.jsxs("span", { children: ["Installed", installedPackages.length > 0 ? ` (${installedPackages.length})` : ""] })] }) }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("download"), style: {
                             flex: 1,
+                            minWidth: 0,
                             backgroundColor: activeTab === "download" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
                             border: activeTab === "download" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
-                            padding: "8px 4px",
-                            fontSize: "12px",
+                            padding: "6px 2px",
+                            fontSize: "11px",
                             height: "auto",
-                        }, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }, children: [SP_JSX.jsx(FaDownload, {}), " Download"] }) }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("settings"), style: {
-                            width: "42px",
-                            minWidth: "42px",
+                        }, children: SP_JSX.jsxs("div", { style: {
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "4px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                            }, children: [SP_JSX.jsx(FaDownload, { style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: "Download" })] }) }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("settings"), style: {
+                            width: "36px",
+                            minWidth: "36px",
+                            flexShrink: 0,
                             backgroundColor: activeTab === "settings" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
                             border: activeTab === "settings" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
-                            padding: "8px",
+                            padding: "6px 0",
                             height: "auto",
                             display: "flex",
                             alignItems: "center",

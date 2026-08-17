@@ -24,7 +24,6 @@ function ReleaseDeckContent() {
   const [settings, setSettings] = useState<PluginSettings | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
 
-  // Load installed packages and settings on mount
   const refreshInstalled = async () => {
     setIsLoadingInstalled(true);
     try {
@@ -53,7 +52,6 @@ function ReleaseDeckContent() {
     refreshInstalled();
     loadSettings();
 
-    // Listen to download progress events from the Python backend
     const progressListener = addEventListener<[progress: DownloadProgress]>(
       "download_progress",
       (progress) => {
@@ -70,30 +68,43 @@ function ReleaseDeckContent() {
   }, []);
 
   return (
-    <div style={{ padding: "0 4px" }}>
-      {/* Gamepad Focusable Top Tab Bar */}
+    <div style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
+      {/* Compact QAM Top Tab Bar */}
       <Focusable
         flow-children="horizontal"
         style={{
           display: "flex",
-          gap: "6px",
+          gap: "4px",
           width: "100%",
-          marginBottom: "12px",
+          boxSizing: "border-box",
+          marginBottom: "10px",
         }}
       >
         <DialogButton
           onClick={() => setActiveTab("installed")}
           style={{
             flex: 1,
+            minWidth: 0,
             backgroundColor: activeTab === "installed" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
             border: activeTab === "installed" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
-            padding: "8px 4px",
-            fontSize: "12px",
+            padding: "6px 2px",
+            fontSize: "11px",
             height: "auto",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-            <FaBox /> Installed {installedPackages.length > 0 ? `(${installedPackages.length})` : ""}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "4px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <FaBox style={{ flexShrink: 0 }} />
+            <span>Installed{installedPackages.length > 0 ? ` (${installedPackages.length})` : ""}</span>
           </div>
         </DialogButton>
 
@@ -101,26 +112,39 @@ function ReleaseDeckContent() {
           onClick={() => setActiveTab("download")}
           style={{
             flex: 1,
+            minWidth: 0,
             backgroundColor: activeTab === "download" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
             border: activeTab === "download" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
-            padding: "8px 4px",
-            fontSize: "12px",
+            padding: "6px 2px",
+            fontSize: "11px",
             height: "auto",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-            <FaDownload /> Download
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "4px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <FaDownload style={{ flexShrink: 0 }} />
+            <span>Download</span>
           </div>
         </DialogButton>
 
         <DialogButton
           onClick={() => setActiveTab("settings")}
           style={{
-            width: "42px",
-            minWidth: "42px",
+            width: "36px",
+            minWidth: "36px",
+            flexShrink: 0,
             backgroundColor: activeTab === "settings" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
             border: activeTab === "settings" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
-            padding: "8px",
+            padding: "6px 0",
             height: "auto",
             display: "flex",
             alignItems: "center",

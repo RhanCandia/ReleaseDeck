@@ -62,7 +62,6 @@ export function DownloadTab({
         setReleases(res.releases);
         setSelectedReleaseIndex(0);
         
-        // Auto-select the first recommended asset in the latest release
         const firstRel = res.releases[0];
         const recommended = firstRel.assets.find((a) => a.is_recommended) || firstRel.assets[0];
         if (recommended) {
@@ -120,7 +119,7 @@ export function DownloadTab({
       if (res.success) {
         toaster.toast({
           title: "ReleaseDeck",
-          body: `Successfully installed ${displayName} to ${res.install_path}!`,
+          body: `Successfully installed ${displayName}!`,
         });
         setStatusMessage({ type: "success", text: `Installed ${displayName} successfully!` });
         onInstalledRefresh();
@@ -150,29 +149,33 @@ export function DownloadTab({
     downloadProgress.status !== "error";
 
   return (
-    <PanelSection title="Download Release Package">
+    <PanelSection title="Download">
       {/* Pinned Repos Quick Select */}
       {pinnedRepos.length > 0 && (
         <PanelSectionRow>
-          <Dropdown
-            menuLabel="Quick Select Favorite"
-            rgOptions={pinnedRepos.map((r) => ({ data: r, label: r }))}
-            selectedOption={pinnedRepos.includes(repoInput) ? repoInput : undefined}
-            onChange={(item) => {
-              setRepoInput(item.data);
-              handleFetchReleases(item.data);
-            }}
-          />
+          <div style={{ width: "100%", boxSizing: "border-box" }}>
+            <Dropdown
+              menuLabel="Quick Select Favorite"
+              rgOptions={pinnedRepos.map((r) => ({ data: r, label: r }))}
+              selectedOption={pinnedRepos.includes(repoInput) ? repoInput : undefined}
+              onChange={(item) => {
+                setRepoInput(item.data);
+                handleFetchReleases(item.data);
+              }}
+            />
+          </div>
         </PanelSectionRow>
       )}
 
       {/* Manual Repo Input */}
       <PanelSectionRow>
-        <TextField
-          label="GitHub Repository (owner/repo)"
-          value={repoInput}
-          onChange={(e) => setRepoInput(e.target.value)}
-        />
+        <div style={{ width: "100%", boxSizing: "border-box" }}>
+          <TextField
+            label="GitHub Repository (owner/repo)"
+            value={repoInput}
+            onChange={(e) => setRepoInput(e.target.value)}
+          />
+        </div>
       </PanelSectionRow>
 
       <PanelSectionRow>
@@ -181,7 +184,7 @@ export function DownloadTab({
           disabled={isLoadingReleases || !!isDownloadingThisRepo}
           onClick={() => handleFetchReleases()}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }}>
             <FaGithub />
             {isLoadingReleases ? "Querying GitHub..." : "Fetch Releases"}
           </div>
@@ -191,7 +194,7 @@ export function DownloadTab({
       {/* Loading Spinner */}
       {isLoadingReleases && (
         <PanelSectionRow>
-          <div style={{ display: "flex", justifyContent: "center", padding: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "center", padding: "10px" }}>
             <Spinner />
           </div>
         </PanelSectionRow>
@@ -202,9 +205,12 @@ export function DownloadTab({
         <PanelSectionRow>
           <div
             style={{
-              padding: "8px 12px",
+              padding: "6px 10px",
               borderRadius: "4px",
-              fontSize: "12px",
+              fontSize: "11px",
+              boxSizing: "border-box",
+              width: "100%",
+              wordBreak: "break-word",
               backgroundColor:
                 statusMessage.type === "error"
                   ? "rgba(220, 53, 69, 0.2)"
@@ -222,9 +228,9 @@ export function DownloadTab({
               gap: "6px",
             }}
           >
-            {statusMessage.type === "error" && <FaExclamationTriangle />}
-            {statusMessage.type === "success" && <FaCheckCircle />}
-            {statusMessage.text}
+            {statusMessage.type === "error" && <FaExclamationTriangle style={{ flexShrink: 0 }} />}
+            {statusMessage.type === "success" && <FaCheckCircle style={{ flexShrink: 0 }} />}
+            <span>{statusMessage.text}</span>
           </div>
         </PanelSectionRow>
       )}
@@ -234,18 +240,20 @@ export function DownloadTab({
         <PanelSectionRow>
           <div
             style={{
-              padding: "12px",
+              padding: "10px",
+              boxSizing: "border-box",
+              width: "100%",
               backgroundColor: "rgba(0, 0, 0, 0.4)",
               borderRadius: "6px",
               border: "1px solid #1a9fff",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
+              gap: "6px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", fontWeight: "bold" }}>
-              <span>
-                {downloadProgress?.status === "extracting" ? "📦 Extracting & Setting Permissions..." : "📥 Downloading..."}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: "bold" }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: "6px" }}>
+                {downloadProgress?.status === "extracting" ? "📦 Extracting..." : "📥 Downloading..."}
               </span>
               <span>{downloadProgress?.percent || 0}%</span>
             </div>
@@ -254,16 +262,16 @@ export function DownloadTab({
               nProgress={downloadProgress?.percent || 0}
             />
 
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", opacity: 0.8 }}>
-              <span>Speed: {downloadProgress?.speed_mb_s || 0} MB/s</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", opacity: 0.8 }}>
+              <span>{downloadProgress?.speed_mb_s || 0} MB/s</span>
               <span>
                 {formatBytes(downloadProgress?.downloaded || 0)} / {formatBytes(downloadProgress?.total || 0)}
               </span>
             </div>
 
             <ButtonItem layout="below" onClick={handleCancelDownload}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                <FaBan /> Cancel Download
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
+                <FaBan /> Cancel
               </div>
             </ButtonItem>
           </div>
@@ -274,22 +282,24 @@ export function DownloadTab({
       {releases.length > 0 && (
         <>
           <PanelSectionRow>
-            <Dropdown
-              menuLabel="Release Version"
-              rgOptions={releases.map((rel, index) => ({
-                data: index,
-                label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre-release]" : ""}`,
-              }))}
-              selectedOption={selectedReleaseIndex}
-              onChange={(item) => handleSelectRelease(item.data)}
-            />
+            <div style={{ width: "100%", boxSizing: "border-box" }}>
+              <Dropdown
+                menuLabel="Release Version"
+                rgOptions={releases.map((rel, index) => ({
+                  data: index,
+                  label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre]" : ""}`,
+                }))}
+                selectedOption={selectedReleaseIndex}
+                onChange={(item) => handleSelectRelease(item.data)}
+              />
+            </div>
           </PanelSectionRow>
 
           {/* Changelog Toggle */}
           {currentRelease?.body && (
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={() => setShowChangelog(!showChangelog)}>
-                {showChangelog ? "Hide Changelog" : "View Release Notes"}
+                <span style={{ fontSize: "11px" }}>{showChangelog ? "Hide Changelog" : "View Release Notes"}</span>
               </ButtonItem>
             </PanelSectionRow>
           )}
@@ -298,14 +308,18 @@ export function DownloadTab({
             <PanelSectionRow>
               <div
                 style={{
-                  maxHeight: "140px",
+                  maxHeight: "120px",
                   overflowY: "auto",
-                  padding: "8px",
+                  overflowX: "hidden",
+                  padding: "6px 8px",
+                  boxSizing: "border-box",
+                  width: "100%",
                   backgroundColor: "rgba(0,0,0,0.3)",
                   borderRadius: "4px",
-                  fontSize: "11px",
+                  fontSize: "10px",
                   whiteSpace: "pre-wrap",
-                  lineHeight: "1.4",
+                  wordBreak: "break-word",
+                  lineHeight: "1.3",
                   opacity: 0.85,
                 }}
               >
@@ -316,10 +330,10 @@ export function DownloadTab({
 
           {/* Package Assets Selector */}
           <PanelSectionRow>
-            <Field label="Available Packages & Binaries">
+            <Field label="Available Packages">
               <Focusable
                 flow-children="vertical"
-                style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }}
+                style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box", marginTop: "4px" }}
               >
                 {currentRelease?.assets.map((asset) => {
                   const isSelected = asset.id === selectedAssetId;
@@ -329,7 +343,9 @@ export function DownloadTab({
                       onActivate={() => setSelectedAssetId(asset.id)}
                       onClick={() => setSelectedAssetId(asset.id)}
                       style={{
-                        padding: "8px 10px",
+                        padding: "6px 8px",
+                        boxSizing: "border-box",
+                        width: "100%",
                         borderRadius: "4px",
                         backgroundColor: isSelected ? "rgba(26, 159, 255, 0.3)" : "rgba(255, 255, 255, 0.05)",
                         border: isSelected ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
@@ -339,30 +355,29 @@ export function DownloadTab({
                         gap: "2px",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: "12px", fontWeight: isSelected ? "bold" : "normal", wordBreak: "break-all" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
+                        <span style={{ fontSize: "11px", fontWeight: isSelected ? "bold" : "normal", wordBreak: "break-all", flex: 1 }}>
                           {isSelected ? "● " : "○ "} {asset.name}
                         </span>
                         {asset.is_recommended && (
                           <span
                             style={{
-                              fontSize: "10px",
+                              fontSize: "9px",
                               backgroundColor: "#2b8a3e",
                               color: "#fff",
-                              padding: "2px 6px",
+                              padding: "1px 5px",
                               borderRadius: "3px",
                               display: "flex",
                               alignItems: "center",
-                              gap: "4px",
+                              gap: "3px",
                               flexShrink: 0,
-                              marginLeft: "6px",
                             }}
                           >
-                            <FaLinux /> Recommended
+                            <FaLinux /> Rec
                           </span>
                         )}
                       </div>
-                      <span style={{ fontSize: "11px", opacity: 0.65 }}>
+                      <span style={{ fontSize: "10px", opacity: 0.65 }}>
                         Size: {formatBytes(asset.size)}
                       </span>
                     </Focusable>
@@ -374,8 +389,8 @@ export function DownloadTab({
 
           {/* Destination Path Preview */}
           <PanelSectionRow>
-            <div style={{ fontSize: "11px", opacity: 0.7, padding: "4px 0" }}>
-              Target Directory: <code>~/Applications/{repoInput.split("/")[1] || repoInput}/</code>
+            <div style={{ fontSize: "10px", opacity: 0.7, padding: "2px 0", wordBreak: "break-all" }}>
+              Target: <code>~/Applications/{repoInput.split("/")[1] || repoInput}/</code>
             </div>
           </PanelSectionRow>
 
@@ -386,9 +401,9 @@ export function DownloadTab({
               disabled={!selectedAsset || !!isDownloadingThisRepo}
               onClick={handleStartDownload}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }}>
                 <FaDownload />
-                {selectedAsset ? `Download & Extract ${formatBytes(selectedAsset.size)}` : "Select a Package Asset"}
+                {selectedAsset ? `Download & Extract (${formatBytes(selectedAsset.size)})` : "Select a Package Asset"}
               </div>
             </ButtonItem>
           </PanelSectionRow>

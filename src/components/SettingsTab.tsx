@@ -74,28 +74,32 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
   };
 
   return (
-    <PanelSection title="Settings & Configuration">
+    <PanelSection title="Settings">
       {/* GitHub Token Field */}
       <PanelSectionRow>
-        <TextField
-          label="GitHub Personal Access Token"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-        />
+        <div style={{ width: "100%", boxSizing: "border-box" }}>
+          <TextField
+            label="GitHub Personal Access Token"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+          />
+        </div>
       </PanelSectionRow>
       <PanelSectionRow>
-        <div style={{ fontSize: "11px", opacity: 0.7, lineHeight: "1.4" }}>
-          <FaInfoCircle /> Adding a classic GitHub token (no permissions needed) prevents "403 Rate Limit" errors when browsing releases.
+        <div style={{ fontSize: "11px", opacity: 0.7, lineHeight: "1.3", wordBreak: "break-word" }}>
+          <FaInfoCircle /> Adding a classic GitHub token prevents "403 Rate Limit" errors.
         </div>
       </PanelSectionRow>
 
       {/* Default Install Directory */}
       <PanelSectionRow>
-        <TextField
-          label="Default Install Directory"
-          value={installDir}
-          onChange={(e) => setInstallDir(e.target.value)}
-        />
+        <div style={{ width: "100%", boxSizing: "border-box" }}>
+          <TextField
+            label="Default Install Directory"
+            value={installDir}
+            onChange={(e) => setInstallDir(e.target.value)}
+          />
+        </div>
       </PanelSectionRow>
 
       {/* Favorite / Pinned Repositories */}
@@ -103,7 +107,14 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
         <Field label="Favorite Repositories">
           <Focusable
             flow-children="vertical"
-            style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "4px" }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              width: "100%",
+              boxSizing: "border-box",
+              marginTop: "4px",
+            }}
           >
             {pinnedRepos.map((repo) => (
               <Focusable
@@ -116,12 +127,14 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                   padding: "6px 8px",
                   borderRadius: "4px",
                   backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  fontSize: "12px",
+                  fontSize: "11px",
+                  boxSizing: "border-box",
+                  width: "100%",
                 }}
               >
-                <span>{repo}</span>
+                <span style={{ wordBreak: "break-all", flex: 1, marginRight: "6px" }}>{repo}</span>
                 <span
-                  style={{ cursor: "pointer", color: "#ff6b6b", padding: "2px 6px" }}
+                  style={{ cursor: "pointer", color: "#ff6b6b", padding: "4px", flexShrink: 0 }}
                   onClick={() => handleRemovePinnedRepo(repo)}
                 >
                   <FaTrash />
@@ -129,19 +142,18 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
               </Focusable>
             ))}
 
-            <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
-              <div style={{ flex: 1 }}>
-                <TextField
-                  label="Add repo (owner/repo)"
-                  value={newRepo}
-                  onChange={(e) => setNewRepo(e.target.value)}
-                />
-              </div>
-              <div style={{ alignSelf: "flex-end", marginBottom: "4px" }}>
-                <ButtonItem layout="below" onClick={handleAddPinnedRepo}>
-                  <FaPlus />
-                </ButtonItem>
-              </div>
+            {/* Add New Repo Row (Stacked / Flex constrained) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }}>
+              <TextField
+                label="Add repo (owner/repo)"
+                value={newRepo}
+                onChange={(e) => setNewRepo(e.target.value)}
+              />
+              <ButtonItem layout="below" onClick={handleAddPinnedRepo}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                  <FaPlus /> Add to Favorites
+                </div>
+              </ButtonItem>
             </div>
           </Focusable>
         </Field>
@@ -163,7 +175,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
 
       {/* Version Footer */}
       <PanelSectionRow>
-        <div style={{ textAlign: "center", fontSize: "11px", opacity: 0.5, padding: "8px" }}>
+        <div style={{ textAlign: "center", fontSize: "10px", opacity: 0.5, padding: "4px 0" }}>
           ReleaseDeck v0.1.0-beta.2 • SteamOS Gaming Mode
         </div>
       </PanelSectionRow>
