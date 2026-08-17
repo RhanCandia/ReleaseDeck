@@ -1,6 +1,6 @@
 import {
   ButtonItem,
-  Dropdown,
+  DropdownItem,
   Focusable,
   PanelSection,
   PanelSectionRow,
@@ -145,21 +145,22 @@ export function DownloadTab({
 
   return (
     <PanelSection title="Download">
-      {/* Pinned Repos Quick Select (only if user added favorites) */}
+      {/* Pinned Repos DropdownItem */}
       {pinnedRepos.length > 0 && (
-        <PanelSectionRow>
-          <div style={{ width: "100%", boxSizing: "border-box" }}>
-            <Dropdown
-              menuLabel="Quick Select Favorite"
-              rgOptions={pinnedRepos.map((r) => ({ data: r, label: r }))}
-              selectedOption={pinnedRepos.includes(repoInput) ? repoInput : undefined}
-              onChange={(item) => {
-                setRepoInput(item.data);
-                handleFetchReleases(item.data);
-              }}
-            />
-          </div>
-        </PanelSectionRow>
+        <DropdownItem
+          label="Favorite Repos"
+          menuLabel="Select Favorite Repository"
+          strDefaultLabel="Select a repository..."
+          rgOptions={pinnedRepos.map((r) => ({ data: r, label: r }))}
+          selectedOption={pinnedRepos.includes(repoInput) ? repoInput : undefined}
+          onChange={(item: any) => {
+            const chosen = item?.data !== undefined ? item.data : item;
+            if (typeof chosen === "string" && chosen) {
+              setRepoInput(chosen);
+              handleFetchReleases(chosen);
+            }
+          }}
+        />
       )}
 
       {/* Manual Repo Input */}
@@ -277,19 +278,21 @@ export function DownloadTab({
       {/* Release Selection */}
       {releases.length > 0 && (
         <>
-          <PanelSectionRow>
-            <div style={{ width: "100%", boxSizing: "border-box" }}>
-              <Dropdown
-                menuLabel="Release Version"
-                rgOptions={releases.map((rel, index) => ({
-                  data: index,
-                  label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre]" : ""}`,
-                }))}
-                selectedOption={selectedReleaseIndex}
-                onChange={(item) => handleSelectRelease(item.data)}
-              />
-            </div>
-          </PanelSectionRow>
+          <DropdownItem
+            label="Version"
+            menuLabel="Select Release Version"
+            rgOptions={releases.map((rel, index) => ({
+              data: index,
+              label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre]" : ""}`,
+            }))}
+            selectedOption={selectedReleaseIndex}
+            onChange={(item: any) => {
+              const chosen = item?.data !== undefined ? item.data : item;
+              if (typeof chosen === "number") {
+                handleSelectRelease(chosen);
+              }
+            }}
+          />
 
           {/* Changelog Toggle */}
           {currentRelease?.body && (
@@ -324,7 +327,7 @@ export function DownloadTab({
             </PanelSectionRow>
           )}
 
-          {/* Package Assets Selector (Full Width, No 2-Column Field Wrapper) */}
+          {/* Package Assets Selector */}
           <PanelSectionRow>
             <div style={{ width: "100%", boxSizing: "border-box" }}>
               <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>
