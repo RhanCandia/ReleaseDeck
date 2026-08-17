@@ -106,19 +106,20 @@ Release Deck turns GitHub into a native game store for your Steam Deck. Here are
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│  Steam Deck UI (Chromium Embedded Framework)                          │
+│  Steam Deck UI (Chromium Embedded Framework / Quick Access Menu)       │
 │  React 19 + TypeScript + @decky/ui + @decky/api                       │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ IPC (callable / emit / events)
 ┌───────────────────────────────────▼────────────────────────────────────┐
-│  SteamOS Python Backend (main.py)                                     │
-│  Asyncio + GitHub REST API Client + Archive Extractor + Steam IPC     │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-        ┌───────────────────────────┴───────────────────────────┐
-        ▼                                                       ▼
- [ ~/Applications/<AppName>/ ]                         [ ~/.config/ReleaseDeck/ ]
- (AppImages, Binaries, Scripts, Assets)                (packages.json, settings.json)
+│  SteamOS Python Backend (main.py + backend/)                           │
+│  Asyncio + GitHub REST API Client + Archive Extractor + VDF Writer    │
+└──────────────┬────────────────────┬────────────────────┬───────────────┘
+               │                    │                    │
+               ▼                    ▼                    ▼
+   [ ~/Applications/<App>/ ]  [ Settings / DB ]    [ Steam Client ]
+   - Extracted Binaries       - packages.json      - shortcuts.vdf
+   - AppImages & Executables  - settings.json      - steamos-add-to-steam
+   - Launch wrapper scripts   (Decky settings dir) - Non-Steam Shortcuts
 ```
 
 ---
@@ -157,14 +158,23 @@ npm run build
 npm test
 ```
 
+### 4. Create Distribution Zip Package
+```bash
+# Bundle production plugin into ReleaseDeck.zip
+npm run package
+```
+
 ---
 
 ## 🚀 Deployment to Steam Deck
 
-Release Deck includes a one-command deployment script:
+Release Deck includes a one-command deployment script to push builds directly to your Steam Deck over Wi-Fi/SSH:
 
 ```bash
 # Deploy to Steam Deck over local network via SSH
+npm run deploy -- -i <STEAM_DECK_IP>
+
+# Alternatively run the script directly:
 bash scripts/deploy.sh -i <STEAM_DECK_IP>
 ```
 
