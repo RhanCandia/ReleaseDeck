@@ -1,7 +1,6 @@
 import {
   ButtonItem,
   Dropdown,
-  Field,
   Focusable,
   PanelSection,
   PanelSectionRow,
@@ -29,7 +28,7 @@ export function DownloadTab({
   onDownloadStarted,
   onInstalledRefresh,
 }: DownloadTabProps) {
-  const [repoInput, setRepoInput] = useState<string>("SirDiabo/GithubLauncher");
+  const [repoInput, setRepoInput] = useState<string>("");
   const [isLoadingReleases, setIsLoadingReleases] = useState<boolean>(false);
   const [releases, setReleases] = useState<GitHubRelease[]>([]);
   const [selectedReleaseIndex, setSelectedReleaseIndex] = useState<number>(0);
@@ -37,11 +36,7 @@ export function DownloadTab({
   const [statusMessage, setStatusMessage] = useState<{ type: "error" | "info" | "success"; text: string } | null>(null);
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
 
-  const pinnedRepos = settings?.pinned_repos || [
-    "SirDiabo/GithubLauncher",
-    "Harbour-Masters/Shipwright",
-    "Mr-Wiseguy/N64Recomp",
-  ];
+  const pinnedRepos = settings?.pinned_repos || [];
 
   const handleFetchReleases = async (targetRepo?: string) => {
     const repo = (targetRepo || repoInput).trim();
@@ -150,7 +145,7 @@ export function DownloadTab({
 
   return (
     <PanelSection title="Download">
-      {/* Pinned Repos Quick Select */}
+      {/* Pinned Repos Quick Select (only if user added favorites) */}
       {pinnedRepos.length > 0 && (
         <PanelSectionRow>
           <div style={{ width: "100%", boxSizing: "border-box" }}>
@@ -171,7 +166,8 @@ export function DownloadTab({
       <PanelSectionRow>
         <div style={{ width: "100%", boxSizing: "border-box" }}>
           <TextField
-            label="GitHub Repository (owner/repo)"
+            label="GitHub Repository"
+            description="Format: owner/repo"
             value={repoInput}
             onChange={(e) => setRepoInput(e.target.value)}
           />
@@ -181,7 +177,7 @@ export function DownloadTab({
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          disabled={isLoadingReleases || !!isDownloadingThisRepo}
+          disabled={isLoadingReleases || !!isDownloadingThisRepo || !repoInput.trim()}
           onClick={() => handleFetchReleases()}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }}>
@@ -328,12 +324,15 @@ export function DownloadTab({
             </PanelSectionRow>
           )}
 
-          {/* Package Assets Selector */}
+          {/* Package Assets Selector (Full Width, No 2-Column Field Wrapper) */}
           <PanelSectionRow>
-            <Field label="Available Packages">
+            <div style={{ width: "100%", boxSizing: "border-box" }}>
+              <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>
+                Available Packages:
+              </div>
               <Focusable
                 flow-children="vertical"
-                style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box", marginTop: "4px" }}
+                style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }}
               >
                 {currentRelease?.assets.map((asset) => {
                   const isSelected = asset.id === selectedAssetId;
@@ -384,7 +383,7 @@ export function DownloadTab({
                   );
                 })}
               </Focusable>
-            </Field>
+            </div>
           </PanelSectionRow>
 
           {/* Destination Path Preview */}

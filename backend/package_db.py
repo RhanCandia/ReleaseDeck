@@ -39,11 +39,7 @@ class PackageDB:
             self._save_settings_data({
                 "github_token": "",
                 "default_install_dir": DEFAULT_INSTALL_DIR,
-                "pinned_repos": [
-                    "SirDiabo/GithubLauncher",
-                    "Harbour-Masters/Shipwright",
-                    "Mr-Wiseguy/N64Recomp"
-                ]
+                "pinned_repos": []
             })
 
     def _load_packages(self) -> List[Dict[str, Any]]:
