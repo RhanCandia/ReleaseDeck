@@ -77,48 +77,118 @@ function ReleaseDeckContent() {
         .spin-icon {
           animation: spin 1s linear infinite;
         }
-        .rd-tab-btn {
-          background-color: rgba(255, 255, 255, 0.06) !important;
-          border: 1px solid rgba(255, 255, 255, 0.12) !important;
-          color: #c0c6ce !important;
-          transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
-          cursor: pointer;
+
+        /* Segmented Tab Bar Container */
+        .rd-segmented-bar {
+          display: flex !important;
+          align-items: center !important;
+          background: rgba(0, 0, 0, 0.45) !important;
+          border: 1px solid rgba(255, 255, 255, 0.09) !important;
+          border-radius: 8px !important;
+          padding: 3px !important;
+          gap: 3px !important;
+          margin-bottom: 12px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
         }
-        .rd-tab-btn * {
+
+        /* Individual Tab Pill */
+        .rd-tab-pill {
+          flex: 1 !important;
+          min-width: 0 !important;
+          height: 32px !important;
+          padding: 0 4px !important;
+          border-radius: 6px !important;
+          border: 1px solid transparent !important;
+          background: transparent !important;
+          color: #9aa4af !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          cursor: pointer !important;
+          transition: all 0.15s ease-in-out !important;
+          outline: none !important;
+          box-sizing: border-box !important;
+        }
+
+        .rd-tab-pill * {
           color: inherit !important;
           fill: currentColor !important;
         }
-        .rd-tab-btn.rd-tab-active {
-          background-color: rgba(26, 159, 255, 0.4) !important;
-          border: 1px solid #1a9fff !important;
+
+        .rd-tab-pill-inner {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          font-size: 11px;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
+        }
+
+        /* Active Tab (Selected, not focused) */
+        .rd-tab-pill.rd-tab-active {
+          background: rgba(26, 159, 255, 0.28) !important;
+          border: 1px solid rgba(26, 159, 255, 0.55) !important;
+          color: #ffffff !important;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+        }
+
+        /* Hover */
+        .rd-tab-pill:hover {
+          background: rgba(255, 255, 255, 0.08) !important;
           color: #ffffff !important;
         }
-        .rd-tab-btn:hover {
-          background-color: rgba(255, 255, 255, 0.15) !important;
-          border-color: rgba(255, 255, 255, 0.3) !important;
+
+        .rd-tab-pill.rd-tab-active:hover {
+          background: rgba(26, 159, 255, 0.42) !important;
           color: #ffffff !important;
         }
-        .rd-tab-btn.rd-tab-active:hover {
-          background-color: rgba(26, 159, 255, 0.55) !important;
-          border-color: #1a9fff !important;
-          color: #ffffff !important;
-        }
-        .rd-tab-btn:focus,
-        .rd-tab-btn:focus-visible,
-        .rd-tab-btn:focus-within,
-        .rd-tab-btn.gpfocus {
-          background-color: #1a9fff !important;
+
+        /* Gamepad Focus State */
+        .rd-tab-pill:focus,
+        .rd-tab-pill:focus-visible,
+        .rd-tab-pill:focus-within,
+        .rd-tab-pill.gpfocus {
+          background: linear-gradient(135deg, #1a9fff 0%, #0078d7 100%) !important;
           border-color: #ffffff !important;
-          box-shadow: 0 0 0 2px #ffffff, 0 0 10px rgba(26, 159, 255, 0.8) !important;
+          box-shadow: 0 0 0 2px #ffffff, 0 3px 10px rgba(26, 159, 255, 0.6) !important;
           color: #ffffff !important;
-          outline: none !important;
+          transform: translateY(-1px);
+          z-index: 2;
         }
-        .rd-tab-btn:focus *,
-        .rd-tab-btn:focus-visible *,
-        .rd-tab-btn:focus-within *,
-        .rd-tab-btn.gpfocus * {
+
+        .rd-tab-pill:focus *,
+        .rd-tab-pill:focus-visible *,
+        .rd-tab-pill:focus-within *,
+        .rd-tab-pill.gpfocus * {
           color: #ffffff !important;
           fill: #ffffff !important;
+        }
+
+        /* Counter Badge */
+        .rd-tab-badge {
+          background: rgba(255, 255, 255, 0.12);
+          color: inherit;
+          font-size: 9px;
+          font-weight: 700;
+          padding: 1px 5px;
+          border-radius: 10px;
+          line-height: 1;
+        }
+
+        .rd-tab-active .rd-tab-badge {
+          background: rgba(26, 159, 255, 0.55);
+          color: #ffffff;
+        }
+
+        .rd-tab-pill:focus .rd-tab-badge,
+        .rd-tab-pill.gpfocus .rd-tab-badge {
+          background: rgba(0, 0, 0, 0.35);
+          color: #ffffff;
         }
 
         /* Card 3-Action Buttons (Launch, Update, Delete) */
@@ -169,86 +239,42 @@ function ReleaseDeckContent() {
         }
       `}</style>
 
-      {/* Compact QAM Top Tab Bar */}
+      {/* Segmented Top Tab Bar */}
       <Focusable
         flow-children="horizontal"
-        style={{
-          display: "flex",
-          gap: "4px",
-          width: "100%",
-          boxSizing: "border-box",
-          marginBottom: "10px",
-        }}
+        className="rd-segmented-bar"
       >
         <DialogButton
-          className={`rd-tab-btn ${activeTab === "apps" ? "rd-tab-active" : ""}`}
+          className={`rd-tab-pill ${activeTab === "apps" ? "rd-tab-active" : ""}`}
           onClick={() => setActiveTab("apps")}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            padding: "6px 2px",
-            fontSize: "11px",
-            height: "auto",
-          }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "4px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <div className="rd-tab-pill-inner">
             <FaBox style={{ flexShrink: 0 }} />
-            <span>Apps{installedPackages.length > 0 ? ` (${installedPackages.length})` : ""}</span>
+            <span>Apps</span>
+            {installedPackages.length > 0 && (
+              <span className="rd-tab-badge">{installedPackages.length}</span>
+            )}
           </div>
         </DialogButton>
 
         <DialogButton
-          className={`rd-tab-btn ${activeTab === "download" ? "rd-tab-active" : ""}`}
+          className={`rd-tab-pill ${activeTab === "download" ? "rd-tab-active" : ""}`}
           onClick={() => setActiveTab("download")}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            padding: "6px 2px",
-            fontSize: "11px",
-            height: "auto",
-          }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "4px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <div className="rd-tab-pill-inner">
             <FaDownload style={{ flexShrink: 0 }} />
             <span>Download</span>
           </div>
         </DialogButton>
 
         <DialogButton
-          className={`rd-tab-btn ${activeTab === "settings" ? "rd-tab-active" : ""}`}
+          className={`rd-tab-pill ${activeTab === "settings" ? "rd-tab-active" : ""}`}
           onClick={() => setActiveTab("settings")}
-          style={{
-            width: "36px",
-            minWidth: "36px",
-            flexShrink: 0,
-            padding: "6px 0",
-            height: "auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
         >
-          <FaCog />
+          <div className="rd-tab-pill-inner">
+            <FaCog style={{ flexShrink: 0 }} />
+            <span>Settings</span>
+          </div>
         </DialogButton>
       </Focusable>
 
