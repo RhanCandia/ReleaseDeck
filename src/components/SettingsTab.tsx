@@ -16,6 +16,8 @@ import {
   FaKey,
   FaExclamationTriangle,
   FaCheckCircle,
+  FaBug,
+  FaTag,
 } from "react-icons/fa";
 import { Api } from "../api";
 import { PluginSettings } from "../types";
@@ -130,6 +132,18 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
       title: "Release Deck",
       body: `Removed ${repoToRemove}.`,
     });
+  };
+
+  const openExternalUrl = (url: string) => {
+    try {
+      if ((window as any).SteamClient?.system?.OpenURLUnderOverlay) {
+        (window as any).SteamClient.system.OpenURLUnderOverlay(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    } catch {
+      window.open(url, "_blank");
+    }
   };
 
   return (
@@ -385,6 +399,114 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                 )}
               </div>
             </DialogButton>
+          </div>
+        </PanelSectionRow>
+      </PanelSection>
+
+      {/* ============================================================ */}
+      {/* SECTION 5: ABOUT RELEASE DECK                                */}
+      {/* ============================================================ */}
+      <PanelSection title="About Release Deck">
+        <PanelSectionRow>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", boxSizing: "border-box" }}>
+            {/* Identity Card */}
+            <div
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "6px",
+                padding: "10px 12px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                boxSizing: "border-box",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                <span style={{ fontSize: "12px", fontWeight: "700", color: "#ffffff" }}>Release Deck</span>
+                <span
+                  style={{
+                    backgroundColor: "rgba(26, 159, 255, 0.2)",
+                    border: "1px solid rgba(26, 159, 255, 0.45)",
+                    color: "#74c0fc",
+                    fontSize: "9px",
+                    fontWeight: "700",
+                    padding: "1px 6px",
+                    borderRadius: "10px",
+                  }}
+                >
+                  v0.1.1
+                </span>
+              </div>
+              <span style={{ fontSize: "10.5px", color: "#9aa4af", lineHeight: "1.35" }}>
+                GitHub release package downloader & game manager for SteamOS Gaming Mode.
+              </span>
+              <span style={{ fontSize: "9.5px", color: "#6c7a89", marginTop: "2px" }}>
+                By Team Release Deck
+              </span>
+            </div>
+
+            {/* Quick Action Links */}
+            <Focusable
+              flow-children="horizontal"
+              style={{
+                display: "flex",
+                gap: "6px",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <DialogButton
+                className="rd-card-btn"
+                onClick={() => openExternalUrl("https://github.com/RhanCandia/ReleaseDeck")}
+                style={{
+                  flex: 1,
+                  padding: "7px 8px",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  height: "auto",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                  <FaGithub size={12} />
+                  <span>GitHub</span>
+                </div>
+              </DialogButton>
+
+              <DialogButton
+                className="rd-card-btn"
+                onClick={() => openExternalUrl("https://github.com/RhanCandia/ReleaseDeck/issues")}
+                style={{
+                  flex: 1,
+                  padding: "7px 8px",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  height: "auto",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                  <FaBug size={11} />
+                  <span>Issues</span>
+                </div>
+              </DialogButton>
+
+              <DialogButton
+                className="rd-card-btn"
+                onClick={() => openExternalUrl("https://github.com/RhanCandia/ReleaseDeck/releases")}
+                style={{
+                  flex: 1,
+                  padding: "7px 8px",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  height: "auto",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                  <FaTag size={11} />
+                  <span>Releases</span>
+                </div>
+              </DialogButton>
+            </Focusable>
           </div>
         </PanelSectionRow>
       </PanelSection>

@@ -7,7 +7,7 @@ import urllib.request
 import urllib.error
 from typing import Dict, List, Optional, Any
 
-USER_AGENT = "ReleaseDeck-SteamDeck-Plugin/0.1.0"
+USER_AGENT = "ReleaseDeck-SteamDeck-Plugin/0.1.1"
 
 LINUX_MATCH_KEYWORDS = ["linux", "x86_64", "x64", "appimage", "tar.gz", "tgz", "tar.xz"]
 NON_LINUX_KEYWORDS = ["win32", "win64", "windows", ".exe", ".msi", ".dmg", ".pkg", "darwin", "macos", "android", ".apk"]

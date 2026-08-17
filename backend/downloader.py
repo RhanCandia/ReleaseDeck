@@ -200,7 +200,7 @@ class Downloader:
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
         ctx = get_ssl_context()
         headers = {
-            "User-Agent": "ReleaseDeck-SteamDeck-Plugin/0.1.0",
+            "User-Agent": "ReleaseDeck-SteamDeck-Plugin/0.1.1",
             "Accept": "application/octet-stream, */*",
         }
         req = urllib.request.Request(url, headers=headers)
