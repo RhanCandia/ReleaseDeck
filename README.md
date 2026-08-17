@@ -6,6 +6,7 @@
     <a href="https://github.com/RhanCandia/ReleaseDeck/releases"><img src="https://img.shields.io/github/v/release/RhanCandia/ReleaseDeck?color=1a9fff&style=flat-square" alt="GitHub release" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-BSD--3--Clause-blue.svg?style=flat-square" alt="License" /></a>
     <a href="https://deckbrew.xyz"><img src="https://img.shields.io/badge/Decky%20Loader-Plugin-orange?style=flat-square" alt="Decky Plugin" /></a>
+    <a href="https://ko-fi.com/rhncnd"><img src="https://img.shields.io/badge/Ko--fi-Support%20Me-ff5e5b?style=flat-square&logo=ko-fi&logoColor=white" alt="Support on Ko-fi" /></a>
   </p>
   <br />
   <img src="assets/preview.png" alt="Release Deck Banner" width="100%" style="border-radius: 8px;" />
@@ -179,6 +180,18 @@ bash scripts/deploy.sh -i <STEAM_DECK_IP>
 ```
 
 > **Note**: Ensure SSH is enabled on your Steam Deck (*Desktop Mode -> System Settings -> Remote Access / SSH* or `sudo systemctl enable --now sshd`).
+
+---
+
+## ☕ Support
+
+If you find Release Deck useful and want to support its ongoing development and maintenance, consider buying me a coffee!
+
+<div align="center">
+  <a href="https://ko-fi.com/rhncnd">
+    <img src="https://storage.ko-fi.com/cdn/kofi3.png?v=3" height="42" alt="Buy Me a Coffee at ko-fi.com" />
+  </a>
+</div>
 
 ---
 
