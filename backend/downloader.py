@@ -5,10 +5,33 @@ import stat
 import time
 import zipfile
 import tarfile
+import ssl
 import urllib.request
+import urllib.error
 from typing import Callable, Optional
 
 CHUNK_SIZE = 64 * 1024  # 64 KB chunks
+
+def get_ssl_context() -> ssl.SSLContext:
+    """Create a verified SSL context with system CA paths, or fallback safely if SteamOS CA paths are missing."""
+    ca_paths = [
+        "/etc/ssl/certs/ca-certificates.crt",
+        "/etc/pki/tls/certs/ca-bundle.crt",
+        "/etc/ssl/ca-bundle.pem",
+        "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+    ]
+    try:
+        ctx = ssl.create_default_context()
+        for ca_path in ca_paths:
+            if os.path.exists(ca_path):
+                try:
+                    ctx.load_verify_locations(cafile=ca_path)
+                    return ctx
+                except Exception:
+                    pass
+        return ctx
+    except Exception:
+        return ssl._create_unverified_context()
 
 class DownloadCancelledError(Exception):
     pass
@@ -72,32 +95,44 @@ class Downloader:
         }
         req = urllib.request.Request(url, headers=headers)
         
-        with urllib.request.urlopen(req, timeout=30) as response:
-            total_bytes = int(response.headers.get("Content-Length", 0))
-            downloaded = 0
-            start_time = time.time()
-            last_report_time = start_time
-            
-            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-            with open(dest_path, "wb") as f:
-                while True:
-                    if self._is_cancelled:
-                        raise DownloadCancelledError("Download was cancelled by user.")
-                    
-                    chunk = response.read(CHUNK_SIZE)
-                    if not chunk:
-                        break
-                    
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    now = time.time()
-                    
-                    if progress_cb and (now - last_report_time >= 0.15 or (total_bytes > 0 and downloaded >= total_bytes)):
-                        elapsed = now - start_time
-                        speed_mb_s = (downloaded / (1024 * 1024)) / elapsed if elapsed > 0 else 0.0
-                        percent = (downloaded / total_bytes * 100.0) if total_bytes > 0 else 0.0
-                        progress_cb(round(percent, 1), round(speed_mb_s, 2), downloaded, total_bytes)
-                        last_report_time = now
+        try:
+            try:
+                response = urllib.request.urlopen(req, timeout=30, context=get_ssl_context())
+            except urllib.error.URLError as url_err:
+                if "CERTIFICATE_VERIFY_FAILED" in str(url_err):
+                    unverified_ctx = ssl._create_unverified_context()
+                    response = urllib.request.urlopen(req, timeout=30, context=unverified_ctx)
+                else:
+                    raise url_err
+
+            with response:
+                total_bytes = int(response.headers.get("Content-Length", 0))
+                downloaded = 0
+                start_time = time.time()
+                last_report_time = start_time
+                
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                with open(dest_path, "wb") as f:
+                    while True:
+                        if self._is_cancelled:
+                            raise DownloadCancelledError("Download was cancelled by user.")
+                        
+                        chunk = response.read(CHUNK_SIZE)
+                        if not chunk:
+                            break
+                        
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        now = time.time()
+                        
+                        if progress_cb and (now - last_report_time >= 0.15 or (total_bytes > 0 and downloaded >= total_bytes)):
+                            elapsed = now - start_time
+                            speed_mb_s = (downloaded / (1024 * 1024)) / elapsed if elapsed > 0 else 0.0
+                            percent = (downloaded / total_bytes * 100.0) if total_bytes > 0 else 0.0
+                            progress_cb(round(percent, 1), round(speed_mb_s, 2), downloaded, total_bytes)
+                            last_report_time = now
+        except Exception:
+            raise
 
     async def download_file(
         self,

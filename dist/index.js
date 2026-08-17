@@ -156,15 +156,13 @@ function formatBytes(bytes, decimals = 1) {
 
 function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalledRefresh, onNavigateToSettings, }) {
     const pinnedRepos = settings?.pinned_repos || [];
-    const [selectedRepoIndex, setSelectedRepoIndex] = SP_REACT.useState(0);
+    const [selectedRepo, setSelectedRepo] = SP_REACT.useState(pinnedRepos[0] || "");
     const [isLoadingReleases, setIsLoadingReleases] = SP_REACT.useState(false);
     const [releases, setReleases] = SP_REACT.useState([]);
-    const [selectedReleaseIndex, setSelectedReleaseIndex] = SP_REACT.useState(0);
+    const [selectedVersion, setSelectedVersion] = SP_REACT.useState("");
     const [selectedAssetId, setSelectedAssetId] = SP_REACT.useState(null);
     const [statusMessage, setStatusMessage] = SP_REACT.useState(null);
     const [showChangelog, setShowChangelog] = SP_REACT.useState(false);
-    const currentRepoName = pinnedRepos[selectedRepoIndex] || "";
-    // Auto-fetch releases when selected repo changes or when repos are loaded
     const fetchReleasesForRepo = async (repo) => {
         if (!repo) {
             setReleases([]);
@@ -173,14 +171,14 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
         setIsLoadingReleases(true);
         setStatusMessage(null);
         setReleases([]);
-        setSelectedReleaseIndex(0);
+        setSelectedVersion("");
         setSelectedAssetId(null);
         try {
             const res = await Api.fetchReleases(repo);
             if (res.success && res.releases && res.releases.length > 0) {
                 setReleases(res.releases);
-                setSelectedReleaseIndex(0);
                 const firstRel = res.releases[0];
+                setSelectedVersion(firstRel.tag_name);
                 const recommended = firstRel.assets.find((a) => a.is_recommended) || firstRel.assets[0];
                 if (recommended) {
                     setSelectedAssetId(recommended.id);
@@ -200,55 +198,56 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
             setIsLoadingReleases(false);
         }
     };
-    // Initial load when pinnedRepos becomes available
+    // Sync state when pinnedRepos changes
     SP_REACT.useEffect(() => {
         if (pinnedRepos.length > 0) {
-            const validIndex = selectedRepoIndex < pinnedRepos.length ? selectedRepoIndex : 0;
-            setSelectedRepoIndex(validIndex);
-            fetchReleasesForRepo(pinnedRepos[validIndex]);
+            const repoToUse = pinnedRepos.includes(selectedRepo) ? selectedRepo : pinnedRepos[0];
+            setSelectedRepo(repoToUse);
+            fetchReleasesForRepo(repoToUse);
         }
         else {
+            setSelectedRepo("");
             setReleases([]);
         }
-    }, [pinnedRepos.length]);
+    }, [pinnedRepos]);
     const handleRepoDropdownChange = (option) => {
-        let index = 0;
-        if (typeof option === "number") {
-            index = option;
+        let chosen = "";
+        if (typeof option === "string") {
+            chosen = option;
         }
-        else if (option && typeof option === "object" && typeof option.data === "number") {
-            index = option.data;
+        else if (option && typeof option === "object") {
+            chosen = option.data || option.value || option.label || "";
         }
-        if (index >= 0 && index < pinnedRepos.length) {
-            setSelectedRepoIndex(index);
-            fetchReleasesForRepo(pinnedRepos[index]);
+        if (chosen && pinnedRepos.includes(chosen)) {
+            setSelectedRepo(chosen);
+            fetchReleasesForRepo(chosen);
         }
     };
-    const currentRelease = releases[selectedReleaseIndex];
-    const selectedAsset = currentRelease?.assets.find((a) => a.id === selectedAssetId);
-    const handleSelectRelease = (option) => {
-        let index = 0;
-        if (typeof option === "number") {
-            index = option;
+    const handleVersionDropdownChange = (option) => {
+        let chosenTag = "";
+        if (typeof option === "string") {
+            chosenTag = option;
         }
-        else if (option && typeof option === "object" && typeof option.data === "number") {
-            index = option.data;
+        else if (option && typeof option === "object") {
+            chosenTag = option.data || option.value || option.label || "";
         }
-        if (index >= 0 && index < releases.length) {
-            setSelectedReleaseIndex(index);
-            const rel = releases[index];
+        if (chosenTag) {
+            setSelectedVersion(chosenTag);
+            const rel = releases.find((r) => r.tag_name === chosenTag);
             if (rel && rel.assets.length > 0) {
                 const rec = rel.assets.find((a) => a.is_recommended) || rel.assets[0];
                 setSelectedAssetId(rec ? rec.id : null);
             }
         }
     };
+    const currentRelease = releases.find((r) => r.tag_name === selectedVersion) || releases[0];
+    const selectedAsset = currentRelease?.assets.find((a) => a.id === selectedAssetId);
     const handleStartDownload = async () => {
-        if (!currentRelease || !selectedAsset || !currentRepoName) {
+        if (!currentRelease || !selectedAsset || !selectedRepo) {
             setStatusMessage({ type: "error", text: "Please select a release asset to download." });
             return;
         }
-        const displayName = currentRelease.name || currentRepoName.split("/")[1] || currentRepoName;
+        const displayName = currentRelease.name || selectedRepo.split("/")[1] || selectedRepo;
         onDownloadStarted();
         toaster.toast({
             title: "ReleaseDeck",
@@ -256,7 +255,7 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
         });
         try {
             const res = await Api.startDownload({
-                repo: currentRepoName,
+                repo: selectedRepo,
                 name: displayName,
                 version: currentRelease.tag_name,
                 asset_name: selectedAsset.name,
@@ -292,7 +291,6 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
     const isDownloading = downloadProgress &&
         downloadProgress.status !== "complete" &&
         downloadProgress.status !== "error";
-    // If no repos are pinned, show empty state with direct link to Settings
     if (pinnedRepos.length === 0) {
         return (SP_JSX.jsx(DFL.PanelSection, { title: "Download", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
                         padding: "16px 8px",
@@ -303,12 +301,12 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                         gap: "8px",
                         width: "100%",
                         boxSizing: "border-box",
-                    }, children: [SP_JSX.jsx(FaStar, { size: 26, color: "#ffd43b" }), SP_JSX.jsx("div", { style: { fontSize: "13px", fontWeight: "bold" }, children: "No Repositories Added Yet" }), SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }, children: ["Add your favorite GitHub repositories (e.g. ", SP_JSX.jsx("code", { children: "owner/repo" }), ") in Settings to start downloading packages."] }), SP_JSX.jsx("div", { style: { marginTop: "6px", width: "100%" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: onNavigateToSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaCog, {}), " Open Settings & Add Repos"] }) }) })] }) }) }));
+                    }, children: [SP_JSX.jsx(FaStar, { size: 26, color: "#ffd43b" }), SP_JSX.jsx("div", { style: { fontSize: "13px", fontWeight: "bold" }, children: "No Repositories Added Yet" }), SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }, children: ["Add your favorite GitHub repositories (e.g. ", SP_JSX.jsx("code", { children: "owner/repo" }), ") in Settings to browse and download release packages."] }), SP_JSX.jsx("div", { style: { marginTop: "6px", width: "100%" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: onNavigateToSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaCog, {}), " Open Settings & Add Repos"] }) }) })] }) }) }));
     }
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Download", children: [SP_JSX.jsx(DFL.DropdownItem, { label: "Repository", menuLabel: "Select Favorite Repository", rgOptions: pinnedRepos.map((r, index) => ({
-                    data: index,
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Download", children: [SP_JSX.jsx(DFL.DropdownItem, { label: "Repository", menuLabel: "Select Favorite Repository", strDefaultLabel: "Select a repository...", rgOptions: pinnedRepos.map((r) => ({
+                    data: r,
                     label: r,
-                })), selectedOption: selectedRepoIndex, onChange: handleRepoDropdownChange }), isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "10px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), statusMessage && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
+                })), selectedOption: selectedRepo, onChange: handleRepoDropdownChange }), isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "10px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), statusMessage && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
                         padding: "6px 10px",
                         borderRadius: "4px",
                         fontSize: "11px",
@@ -339,9 +337,9 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                         flexDirection: "column",
                         gap: "6px",
                     }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: "bold" }, children: [SP_JSX.jsx("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: "6px" }, children: downloadProgress?.status === "extracting" ? "📦 Extracting..." : "📥 Downloading..." }), SP_JSX.jsxs("span", { children: [downloadProgress?.percent || 0, "%"] })] }), SP_JSX.jsx(DFL.ProgressBar, { nProgress: downloadProgress?.percent || 0 }), SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: "10px", opacity: 0.8 }, children: [SP_JSX.jsxs("span", { children: [downloadProgress?.speed_mb_s || 0, " MB/s"] }), SP_JSX.jsxs("span", { children: [formatBytes(downloadProgress?.downloaded || 0), " / ", formatBytes(downloadProgress?.total || 0)] })] }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: handleCancelDownload, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }, children: [SP_JSX.jsx(FaBan, {}), " Cancel"] }) })] }) })), !isLoadingReleases && releases.length > 0 && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.DropdownItem, { label: "Version", menuLabel: "Select Release Version", rgOptions: releases.map((rel, index) => ({
-                            data: index,
+                            data: rel.tag_name,
                             label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre]" : ""}`,
-                        })), selectedOption: selectedReleaseIndex, onChange: handleSelectRelease }), currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => setShowChangelog(!showChangelog), children: SP_JSX.jsx("span", { style: { fontSize: "11px" }, children: showChangelog ? "Hide Changelog" : "View Release Notes" }) }) })), showChangelog && currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
+                        })), selectedOption: selectedVersion || releases[0]?.tag_name, onChange: handleVersionDropdownChange }), currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => setShowChangelog(!showChangelog), children: SP_JSX.jsx("span", { style: { fontSize: "11px" }, children: showChangelog ? "Hide Changelog" : "View Release Notes" }) }) })), showChangelog && currentRelease?.body && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
                                 maxHeight: "120px",
                                 overflowY: "auto",
                                 overflowX: "hidden",
@@ -379,7 +377,7 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                                                                 gap: "3px",
                                                                 flexShrink: 0,
                                                             }, children: [SP_JSX.jsx(FaLinux, {}), " Rec"] }))] }), SP_JSX.jsxs("span", { style: { fontSize: "10px", opacity: 0.65 }, children: ["Size: ", formatBytes(asset.size)] })] }, asset.id));
-                                    }) })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "10px", opacity: 0.7, padding: "2px 0", wordBreak: "break-all" }, children: ["Target: ", SP_JSX.jsxs("code", { children: ["~/Applications/", currentRepoName.split("/")[1] || currentRepoName, "/"] })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: !selectedAsset || !!isDownloading, onClick: handleStartDownload, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaDownload, {}), selectedAsset ? `Download & Extract (${formatBytes(selectedAsset.size)})` : "Select a Package Asset"] }) }) })] }))] }));
+                                    }) })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "10px", opacity: 0.7, padding: "2px 0", wordBreak: "break-all" }, children: ["Target: ", SP_JSX.jsxs("code", { children: ["~/Applications/", selectedRepo.split("/")[1] || selectedRepo, "/"] })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: !selectedAsset || !!isDownloading, onClick: handleStartDownload, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaDownload, {}), selectedAsset ? `Download & Extract (${formatBytes(selectedAsset.size)})` : "Select a Package Asset"] }) }) })] }))] }));
 }
 
 function InstalledTab({ packages, isLoading, onRefresh, onNavigateToDownload, }) {

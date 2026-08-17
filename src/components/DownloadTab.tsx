@@ -31,17 +31,14 @@ export function DownloadTab({
 }: DownloadTabProps) {
   const pinnedRepos = settings?.pinned_repos || [];
 
-  const [selectedRepoIndex, setSelectedRepoIndex] = useState<number>(0);
+  const [selectedRepo, setSelectedRepo] = useState<string>(pinnedRepos[0] || "");
   const [isLoadingReleases, setIsLoadingReleases] = useState<boolean>(false);
   const [releases, setReleases] = useState<GitHubRelease[]>([]);
-  const [selectedReleaseIndex, setSelectedReleaseIndex] = useState<number>(0);
+  const [selectedVersion, setSelectedVersion] = useState<string>("");
   const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: "error" | "info" | "success"; text: string } | null>(null);
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
 
-  const currentRepoName = pinnedRepos[selectedRepoIndex] || "";
-
-  // Auto-fetch releases when selected repo changes or when repos are loaded
   const fetchReleasesForRepo = async (repo: string) => {
     if (!repo) {
       setReleases([]);
@@ -51,16 +48,16 @@ export function DownloadTab({
     setIsLoadingReleases(true);
     setStatusMessage(null);
     setReleases([]);
-    setSelectedReleaseIndex(0);
+    setSelectedVersion("");
     setSelectedAssetId(null);
 
     try {
       const res = await Api.fetchReleases(repo);
       if (res.success && res.releases && res.releases.length > 0) {
         setReleases(res.releases);
-        setSelectedReleaseIndex(0);
-        
         const firstRel = res.releases[0];
+        setSelectedVersion(firstRel.tag_name);
+        
         const recommended = firstRel.assets.find((a) => a.is_recommended) || firstRel.assets[0];
         if (recommended) {
           setSelectedAssetId(recommended.id);
@@ -78,45 +75,43 @@ export function DownloadTab({
     }
   };
 
-  // Initial load when pinnedRepos becomes available
+  // Sync state when pinnedRepos changes
   useEffect(() => {
     if (pinnedRepos.length > 0) {
-      const validIndex = selectedRepoIndex < pinnedRepos.length ? selectedRepoIndex : 0;
-      setSelectedRepoIndex(validIndex);
-      fetchReleasesForRepo(pinnedRepos[validIndex]);
+      const repoToUse = pinnedRepos.includes(selectedRepo) ? selectedRepo : pinnedRepos[0];
+      setSelectedRepo(repoToUse);
+      fetchReleasesForRepo(repoToUse);
     } else {
+      setSelectedRepo("");
       setReleases([]);
     }
-  }, [pinnedRepos.length]);
+  }, [pinnedRepos]);
 
   const handleRepoDropdownChange = (option: any) => {
-    let index = 0;
-    if (typeof option === "number") {
-      index = option;
-    } else if (option && typeof option === "object" && typeof option.data === "number") {
-      index = option.data;
+    let chosen = "";
+    if (typeof option === "string") {
+      chosen = option;
+    } else if (option && typeof option === "object") {
+      chosen = option.data || option.value || option.label || "";
     }
 
-    if (index >= 0 && index < pinnedRepos.length) {
-      setSelectedRepoIndex(index);
-      fetchReleasesForRepo(pinnedRepos[index]);
+    if (chosen && pinnedRepos.includes(chosen)) {
+      setSelectedRepo(chosen);
+      fetchReleasesForRepo(chosen);
     }
   };
 
-  const currentRelease: GitHubRelease | undefined = releases[selectedReleaseIndex];
-  const selectedAsset: GitHubAsset | undefined = currentRelease?.assets.find((a) => a.id === selectedAssetId);
-
-  const handleSelectRelease = (option: any) => {
-    let index = 0;
-    if (typeof option === "number") {
-      index = option;
-    } else if (option && typeof option === "object" && typeof option.data === "number") {
-      index = option.data;
+  const handleVersionDropdownChange = (option: any) => {
+    let chosenTag = "";
+    if (typeof option === "string") {
+      chosenTag = option;
+    } else if (option && typeof option === "object") {
+      chosenTag = option.data || option.value || option.label || "";
     }
 
-    if (index >= 0 && index < releases.length) {
-      setSelectedReleaseIndex(index);
-      const rel = releases[index];
+    if (chosenTag) {
+      setSelectedVersion(chosenTag);
+      const rel = releases.find((r) => r.tag_name === chosenTag);
       if (rel && rel.assets.length > 0) {
         const rec = rel.assets.find((a) => a.is_recommended) || rel.assets[0];
         setSelectedAssetId(rec ? rec.id : null);
@@ -124,13 +119,18 @@ export function DownloadTab({
     }
   };
 
+  const currentRelease: GitHubRelease | undefined =
+    releases.find((r) => r.tag_name === selectedVersion) || releases[0];
+  const selectedAsset: GitHubAsset | undefined =
+    currentRelease?.assets.find((a) => a.id === selectedAssetId);
+
   const handleStartDownload = async () => {
-    if (!currentRelease || !selectedAsset || !currentRepoName) {
+    if (!currentRelease || !selectedAsset || !selectedRepo) {
       setStatusMessage({ type: "error", text: "Please select a release asset to download." });
       return;
     }
 
-    const displayName = currentRelease.name || currentRepoName.split("/")[1] || currentRepoName;
+    const displayName = currentRelease.name || selectedRepo.split("/")[1] || selectedRepo;
 
     onDownloadStarted();
     toaster.toast({
@@ -140,7 +140,7 @@ export function DownloadTab({
 
     try {
       const res = await Api.startDownload({
-        repo: currentRepoName,
+        repo: selectedRepo,
         name: displayName,
         version: currentRelease.tag_name,
         asset_name: selectedAsset.name,
@@ -179,7 +179,6 @@ export function DownloadTab({
     downloadProgress.status !== "complete" &&
     downloadProgress.status !== "error";
 
-  // If no repos are pinned, show empty state with direct link to Settings
   if (pinnedRepos.length === 0) {
     return (
       <PanelSection title="Download">
@@ -199,7 +198,7 @@ export function DownloadTab({
             <FaStar size={26} color="#ffd43b" />
             <div style={{ fontSize: "13px", fontWeight: "bold" }}>No Repositories Added Yet</div>
             <div style={{ fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }}>
-              Add your favorite GitHub repositories (e.g. <code>owner/repo</code>) in Settings to start downloading packages.
+              Add your favorite GitHub repositories (e.g. <code>owner/repo</code>) in Settings to browse and download release packages.
             </div>
             <div style={{ marginTop: "6px", width: "100%" }}>
               <ButtonItem layout="below" onClick={onNavigateToSettings}>
@@ -216,15 +215,16 @@ export function DownloadTab({
 
   return (
     <PanelSection title="Download">
-      {/* Favorite Repos Dropdown */}
+      {/* Favorite Repos Dropdown (String data mapping) */}
       <DropdownItem
         label="Repository"
         menuLabel="Select Favorite Repository"
-        rgOptions={pinnedRepos.map((r, index) => ({
-          data: index,
+        strDefaultLabel="Select a repository..."
+        rgOptions={pinnedRepos.map((r) => ({
+          data: r,
           label: r,
         }))}
-        selectedOption={selectedRepoIndex}
+        selectedOption={selectedRepo}
         onChange={handleRepoDropdownChange}
       />
 
@@ -322,11 +322,11 @@ export function DownloadTab({
             label="Version"
             menuLabel="Select Release Version"
             rgOptions={releases.map((rel, index) => ({
-              data: index,
+              data: rel.tag_name,
               label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre]" : ""}`,
             }))}
-            selectedOption={selectedReleaseIndex}
-            onChange={handleSelectRelease}
+            selectedOption={selectedVersion || releases[0]?.tag_name}
+            onChange={handleVersionDropdownChange}
           />
 
           {/* Changelog Toggle */}
@@ -427,7 +427,7 @@ export function DownloadTab({
           {/* Destination Path Preview */}
           <PanelSectionRow>
             <div style={{ fontSize: "10px", opacity: 0.7, padding: "2px 0", wordBreak: "break-all" }}>
-              Target: <code>~/Applications/{currentRepoName.split("/")[1] || currentRepoName}/</code>
+              Target: <code>~/Applications/{selectedRepo.split("/")[1] || selectedRepo}/</code>
             </div>
           </PanelSectionRow>
 

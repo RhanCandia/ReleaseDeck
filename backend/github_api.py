@@ -1,6 +1,8 @@
 import asyncio
 import json
+import os
 import re
+import ssl
 import urllib.request
 import urllib.error
 from typing import Dict, List, Optional, Any
@@ -9,6 +11,27 @@ USER_AGENT = "ReleaseDeck-SteamDeck-Plugin/0.1.0"
 
 LINUX_MATCH_KEYWORDS = ["linux", "x86_64", "x64", "appimage", "tar.gz", "tgz", "tar.xz"]
 NON_LINUX_KEYWORDS = ["win32", "win64", "windows", ".exe", ".msi", ".dmg", ".pkg", "darwin", "macos", "android", ".apk"]
+
+def get_ssl_context() -> ssl.SSLContext:
+    """Create a verified SSL context with system CA paths, or fallback safely if SteamOS CA paths are missing."""
+    ca_paths = [
+        "/etc/ssl/certs/ca-certificates.crt",
+        "/etc/pki/tls/certs/ca-bundle.crt",
+        "/etc/ssl/ca-bundle.pem",
+        "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+    ]
+    try:
+        ctx = ssl.create_default_context()
+        for ca_path in ca_paths:
+            if os.path.exists(ca_path):
+                try:
+                    ctx.load_verify_locations(cafile=ca_path)
+                    return ctx
+                except Exception:
+                    pass
+        return ctx
+    except Exception:
+        return ssl._create_unverified_context()
 
 def is_linux_recommended(asset_name: str) -> bool:
     """Determine if a release asset is suitable/recommended for Steam Deck / SteamOS."""
@@ -42,7 +65,6 @@ class GitHubClient:
         self.token = token.strip() if token else None
 
     def _sync_fetch_releases(self, repo: str) -> List[Dict[str, Any]]:
-        # Validate owner/repo
         repo = repo.strip().strip("/")
         if not re.match(r"^[\w\.\-]+/[\w\.\-]+$", repo):
             raise GitHubAPIError(f"Invalid repository format '{repo}'. Expected 'owner/repo'.")
@@ -56,9 +78,19 @@ class GitHubClient:
             headers["Authorization"] = f"token {self.token}"
 
         req = urllib.request.Request(url, headers=headers)
+        
+        # Try with default/custom SSL context first, with automatic unverified fallback if certs fail on SteamOS
         try:
-            with urllib.request.urlopen(req, timeout=15) as response:
-                status = response.getcode()
+            try:
+                response = urllib.request.urlopen(req, timeout=15, context=get_ssl_context())
+            except urllib.error.URLError as url_err:
+                if "CERTIFICATE_VERIFY_FAILED" in str(url_err):
+                    unverified_ctx = ssl._create_unverified_context()
+                    response = urllib.request.urlopen(req, timeout=15, context=unverified_ctx)
+                else:
+                    raise url_err
+
+            with response:
                 raw_data = response.read().decode("utf-8")
                 releases_json = json.loads(raw_data)
                 
