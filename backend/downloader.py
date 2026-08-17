@@ -77,6 +77,43 @@ def inspect_and_mark_executables(target_dir: str) -> None:
             if is_executable:
                 make_executable(full_path)
 
+def find_executable(install_path: str) -> Optional[str]:
+    """Locate the best executable (AppImage, script, binary) inside the package installation directory."""
+    if not os.path.exists(install_path):
+        return None
+    if os.path.isfile(install_path) and os.access(install_path, os.X_OK):
+        return install_path
+
+    if os.path.isdir(install_path):
+        # 1. Search for .AppImage
+        for f in sorted(os.listdir(install_path)):
+            full = os.path.join(install_path, f)
+            if os.path.isfile(full) and f.endswith(".AppImage"):
+                return full
+
+        # 2. Search for shell script launchers (.sh)
+        for f in sorted(os.listdir(install_path)):
+            full = os.path.join(install_path, f)
+            if os.path.isfile(full) and f.endswith(".sh"):
+                return full
+
+        # 3. Search for root executables or .bin
+        for f in sorted(os.listdir(install_path)):
+            full = os.path.join(install_path, f)
+            if os.path.isfile(full) and (f.endswith(".bin") or os.access(full, os.X_OK)):
+                return full
+
+        # 4. Recursively check subdirectories
+        for root, _, files in os.walk(install_path):
+            for f in sorted(files):
+                full = os.path.join(root, f)
+                if f.endswith(".AppImage") or f.endswith(".sh"):
+                    return full
+                if os.path.isfile(full) and os.access(full, os.X_OK):
+                    return full
+
+    return None
+
 class Downloader:
     def __init__(self):
         self._is_cancelled = False

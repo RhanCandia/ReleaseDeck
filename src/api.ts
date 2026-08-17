@@ -8,6 +8,7 @@ const startDownloadCallable = callable<
 >("start_download");
 const cancelDownloadCallable = callable<[], { success: boolean; error?: string }>("cancel_download");
 const getInstalledPackagesCallable = callable<[], InstalledPackage[]>("get_installed_packages");
+const launchPackageCallable = callable<[package_id: string], { success: boolean; executable?: string; error?: string }>("launch_package");
 const uninstallPackageCallable = callable<[package_id: string, delete_files: boolean], { success: boolean; error?: string }>("uninstall_package");
 const checkAllUpdatesCallable = callable<[], InstalledPackage[]>("check_all_updates");
 const upgradePackageCallable = callable<[package_id: string], { success: boolean; package?: InstalledPackage; error?: string }>("upgrade_package");
@@ -33,6 +34,7 @@ export const Api = {
   ),
   cancelDownload: () => cancelDownloadCallable(),
   getInstalledPackages: () => getInstalledPackagesCallable(),
+  launchPackage: (packageId: string) => launchPackageCallable(packageId),
   uninstallPackage: (packageId: string, deleteFiles: boolean = true) => uninstallPackageCallable(packageId, deleteFiles),
   checkAllUpdates: () => checkAllUpdatesCallable(),
   upgradePackage: (packageId: string) => upgradePackageCallable(packageId),

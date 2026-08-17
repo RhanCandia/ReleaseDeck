@@ -55,7 +55,12 @@ async def run_e2e():
     assert pkg["installed_version"] == "v1.0.0"
     print("✓ Package registered in database with size:", pkg["size_bytes"], "bytes")
 
-    print("\n3. Testing uninstall_package()...")
+    print("\n3. Testing launch_package()...")
+    launch_res = await plugin.launch_package(pkg["id"])
+    assert launch_res["success"], f"Launch failed: {launch_res}"
+    print("✓ Package launched executable:", launch_res["executable"])
+
+    print("\n4. Testing uninstall_package()...")
     uninst_res = await plugin.uninstall_package(pkg["id"], delete_files=True)
     assert uninst_res["success"], f"Uninstall failed: {uninst_res}"
     remaining = await plugin.get_installed_packages()

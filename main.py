@@ -7,9 +7,10 @@ from typing import Any, Dict, List, Optional
 # Enable importing from local backend directory
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import subprocess
 import decky
 from backend.github_api import GitHubClient, GitHubAPIError
-from backend.downloader import Downloader, DownloadCancelledError, ExtractionError
+from backend.downloader import Downloader, DownloadCancelledError, ExtractionError, find_executable
 from backend.package_db import PackageDB, DEFAULT_INSTALL_DIR
 from backend.updater import is_newer_version, find_matching_upgrade_asset
 
@@ -184,6 +185,45 @@ class Plugin:
         if not self.package_db:
             return []
         return self.package_db.get_all_packages()
+
+    async def launch_package(self, package_id: str) -> Dict[str, Any]:
+        """Launch the package executable in a detached background process."""
+        if not self.package_db:
+            return {"success": False, "error": "Database not initialized."}
+        
+        pkg = self.package_db.get_package(package_id)
+        if not pkg:
+            return {"success": False, "error": "Package not found."}
+
+        install_path = pkg.get("install_path", "")
+        exe_path = find_executable(install_path)
+        if not exe_path:
+            return {"success": False, "error": f"No executable found in {install_path}"}
+
+        try:
+            # Ensure file is marked executable
+            try:
+                st = os.stat(exe_path)
+                os.chmod(exe_path, st.st_mode | 0o755)
+            except Exception:
+                pass
+
+            work_dir = os.path.dirname(exe_path)
+            decky.logger.info(f"Launching application: {exe_path} from {work_dir}")
+
+            cmd = ["/bin/bash", exe_path] if exe_path.endswith(".sh") else [exe_path]
+
+            subprocess.Popen(
+                cmd,
+                cwd=work_dir,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True
+            )
+            return {"success": True, "executable": exe_path}
+        except Exception as e:
+            decky.logger.error(f"Failed to launch {exe_path}: {e}")
+            return {"success": False, "error": str(e)}
 
     async def uninstall_package(self, package_id: str, delete_files: bool = True) -> Dict[str, Any]:
         """Delete package folder from disk and remove from registry."""

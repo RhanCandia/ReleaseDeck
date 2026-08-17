@@ -84,6 +84,7 @@ if ! ssh -p "$DECK_PORT" -o ConnectTimeout=5 -o BatchMode=no "${DECK_USER}@${DEC
 fi
 
 echo -e "${CYAN}==> [3/4] Syncing plugin files to Steam Deck (${REMOTE_PLUGIN_DIR})...${NC}"
+ssh -p "$DECK_PORT" -o BatchMode=yes "${DECK_USER}@${DECK_IP}" "mkdir -p ${REMOTE_PLUGIN_DIR} && rm -f ${REMOTE_PLUGIN_DIR}/plugin.json" 2>/dev/null || true
 if command -v rsync >/dev/null 2>&1; then
     rsync -avz -e "ssh -p ${DECK_PORT}" \
         --delete \

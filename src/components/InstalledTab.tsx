@@ -1,5 +1,7 @@
 import {
   ButtonItem,
+  DialogButton,
+  Focusable,
   PanelSection,
   PanelSectionRow,
   Spinner,
@@ -10,8 +12,8 @@ import {
   FaSync,
   FaTrash,
   FaArrowUp,
-  FaFolder,
-  FaHdd,
+  FaPlay,
+  FaGithub,
   FaBoxOpen,
   FaExclamationCircle,
 } from "react-icons/fa";
@@ -34,6 +36,7 @@ export function InstalledTab({
 }: InstalledTabProps) {
   const [isCheckingUpdates, setIsCheckingUpdates] = useState<boolean>(false);
   const [upgradingId, setUpgradingId] = useState<string | null>(null);
+  const [launchingId, setLaunchingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleCheckUpdates = async () => {
@@ -58,30 +61,60 @@ export function InstalledTab({
     }
   };
 
+  const handleLaunch = async (pkg: InstalledPackage) => {
+    setLaunchingId(pkg.id);
+    toaster.toast({
+      title: "ReleaseDeck",
+      body: `Launching ${pkg.name || pkg.repository}...`,
+    });
+
+    try {
+      const res = await Api.launchPackage(pkg.id);
+      if (res.success) {
+        toaster.toast({
+          title: "App Launched",
+          body: `Running ${pkg.name || pkg.repository}`,
+        });
+      } else {
+        toaster.toast({
+          title: "Launch Failed",
+          body: res.error || "Could not launch executable.",
+        });
+      }
+    } catch (e: any) {
+      toaster.toast({
+        title: "Launch Error",
+        body: e?.message || "Unexpected error while launching.",
+      });
+    } finally {
+      setLaunchingId(null);
+    }
+  };
+
   const handleUpgrade = async (pkg: InstalledPackage) => {
     setUpgradingId(pkg.id);
     toaster.toast({
       title: "ReleaseDeck",
-      body: `Upgrading ${pkg.name} to ${pkg.latest_version}...`,
+      body: `Updating ${pkg.name || pkg.repository}...`,
     });
 
     try {
       const res = await Api.upgradePackage(pkg.id);
       if (res.success) {
         toaster.toast({
-          title: "Upgrade Complete",
-          body: `${pkg.name} updated to ${pkg.latest_version}!`,
+          title: "Update Complete",
+          body: `${pkg.name || pkg.repository} is up to date!`,
         });
         onRefresh();
       } else {
         toaster.toast({
-          title: "Upgrade Failed",
-          body: res.error || "Upgrade failed.",
+          title: "Update Failed",
+          body: res.error || "Update failed.",
         });
       }
     } catch (e: any) {
       toaster.toast({
-        title: "Upgrade Error",
+        title: "Update Error",
         body: e?.message || "Unexpected error.",
       });
     } finally {
@@ -100,18 +133,18 @@ export function InstalledTab({
       if (res.success) {
         toaster.toast({
           title: "ReleaseDeck",
-          body: `Uninstalled ${pkg.name}.`,
+          body: `Deleted ${pkg.name || pkg.repository}.`,
         });
         onRefresh();
       } else {
         toaster.toast({
-          title: "Uninstall Error",
-          body: res.error || "Could not uninstall package.",
+          title: "Delete Error",
+          body: res.error || "Could not delete package.",
         });
       }
     } catch (e: any) {
       toaster.toast({
-        title: "Uninstall Error",
+        title: "Delete Error",
         body: e?.message || "Unexpected error.",
       });
     } finally {
@@ -120,7 +153,7 @@ export function InstalledTab({
   };
 
   return (
-    <PanelSection title={`Installed (${packages.length})`}>
+    <PanelSection title={`Apps (${packages.length})`}>
       {/* Header Actions */}
       <PanelSectionRow>
         <ButtonItem
@@ -161,7 +194,7 @@ export function InstalledTab({
             }}
           >
             <FaBoxOpen size={28} />
-            <div style={{ fontSize: "13px", fontWeight: "bold" }}>No Packages Installed Yet</div>
+            <div style={{ fontSize: "13px", fontWeight: "bold" }}>No Apps Installed Yet</div>
             <div style={{ fontSize: "11px", opacity: 0.7 }}>
               Download game ports and tools directly from GitHub.
             </div>
@@ -174,10 +207,11 @@ export function InstalledTab({
         </PanelSectionRow>
       )}
 
-      {/* Package List */}
+      {/* App List */}
       {!isLoading &&
         packages.map((pkg) => {
           const isUpgrading = upgradingId === pkg.id;
+          const isLaunching = launchingId === pkg.id;
           const isConfirmingDelete = deletingId === pkg.id;
 
           return (
@@ -195,17 +229,29 @@ export function InstalledTab({
                   boxSizing: "border-box",
                 }}
               >
-                {/* Header: Name & Update Badge */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "6px" }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: "bold", fontSize: "12px", wordBreak: "break-word" }}>{pkg.name}</div>
-                    <div style={{ fontSize: "10px", opacity: 0.65, wordBreak: "break-all" }}>{pkg.repository}</div>
+                {/* Header: Repo Name & Update Badge */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
+                    <FaGithub style={{ flexShrink: 0, opacity: 0.8, fontSize: "13px" }} />
+                    <div
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "12px",
+                        color: "#ffffff",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={pkg.repository}
+                    >
+                      {pkg.repository || pkg.name}
+                    </div>
                   </div>
-                  {pkg.has_update && (
+                  {pkg.has_update ? (
                     <span
                       style={{
                         backgroundColor: "#f59f00",
-                        color: "#000",
+                        color: "#000000",
                         fontSize: "9px",
                         fontWeight: "bold",
                         padding: "1px 5px",
@@ -218,61 +264,95 @@ export function InstalledTab({
                     >
                       <FaExclamationCircle /> Update
                     </span>
-                  )}
-                </div>
-
-                {/* Metadata Details */}
-                <div style={{ fontSize: "10px", opacity: 0.8, display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <div>
-                    Ver: <strong>{pkg.installed_version}</strong>
-                    {pkg.has_update && (
-                      <span style={{ color: "#ffd43b", marginLeft: "4px" }}>
-                        ➔ <strong>{pkg.latest_version}</strong>
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <FaHdd /> Size: {formatBytes(pkg.size_bytes)}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", wordBreak: "break-all" }}>
-                    <FaFolder /> Path: <code>{pkg.install_path}</code>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "2px" }}>
-                  {pkg.has_update && (
-                    <ButtonItem
-                      layout="below"
-                      disabled={isUpgrading}
-                      onClick={() => handleUpgrade(pkg)}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", fontSize: "11px" }}>
-                        <FaArrowUp />
-                        {isUpgrading ? "Updating..." : `Update to ${pkg.latest_version}`}
-                      </div>
-                    </ButtonItem>
-                  )}
-
-                  <ButtonItem
-                    layout="below"
-                    onClick={() => handleUninstall(pkg)}
-                  >
-                    <div
+                  ) : (
+                    <span
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "4px",
-                        fontSize: "11px",
-                        color: isConfirmingDelete ? "#ff6b6b" : undefined,
+                        backgroundColor: "rgba(255, 255, 255, 0.1)",
+                        color: "#969ba3",
+                        fontSize: "9px",
+                        padding: "1px 5px",
+                        borderRadius: "3px",
+                        flexShrink: 0,
                       }}
                     >
-                      <FaTrash />
-                      {isConfirmingDelete ? "Confirm Delete?" : "Uninstall"}
-                    </div>
-                  </ButtonItem>
+                      {pkg.installed_version}
+                    </span>
+                  )}
                 </div>
+
+                {/* Subtext info */}
+                <div style={{ fontSize: "10px", color: "#969ba3", display: "flex", justifyContent: "space-between", gap: "4px" }}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {pkg.name && pkg.name !== pkg.repository ? pkg.name : `Ver: ${pkg.installed_version}`}
+                  </span>
+                  <span style={{ flexShrink: 0 }}>
+                    {formatBytes(pkg.size_bytes)}
+                  </span>
+                </div>
+
+                {/* 3 Buttons: Launch, Update, Delete */}
+                <Focusable
+                  flow-children="horizontal"
+                  style={{
+                    display: "flex",
+                    gap: "4px",
+                    width: "100%",
+                    marginTop: "2px",
+                  }}
+                >
+                  <DialogButton
+                    className="rd-card-btn rd-card-btn-launch"
+                    disabled={isLaunching}
+                    onClick={() => handleLaunch(pkg)}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      padding: "6px 2px",
+                      fontSize: "11px",
+                      height: "auto",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <FaPlay size={10} style={{ flexShrink: 0 }} />
+                      <span>{isLaunching ? "Starting..." : "Launch"}</span>
+                    </div>
+                  </DialogButton>
+
+                  <DialogButton
+                    className={`rd-card-btn rd-card-btn-update ${pkg.has_update ? "rd-update-available" : ""}`}
+                    disabled={isUpgrading}
+                    onClick={() => handleUpgrade(pkg)}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      padding: "6px 2px",
+                      fontSize: "11px",
+                      height: "auto",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <FaArrowUp size={10} style={{ flexShrink: 0 }} className={isUpgrading ? "spin-icon" : ""} />
+                      <span>{isUpgrading ? "Updating..." : "Update"}</span>
+                    </div>
+                  </DialogButton>
+
+                  <DialogButton
+                    className={`rd-card-btn rd-card-btn-delete ${isConfirmingDelete ? "rd-confirm-delete" : ""}`}
+                    onClick={() => handleUninstall(pkg)}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      padding: "6px 2px",
+                      fontSize: "11px",
+                      height: "auto",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <FaTrash size={10} style={{ flexShrink: 0 }} />
+                      <span>{isConfirmingDelete ? "Confirm?" : "Delete"}</span>
+                    </div>
+                  </DialogButton>
+                </Focusable>
               </div>
             </PanelSectionRow>
           );
