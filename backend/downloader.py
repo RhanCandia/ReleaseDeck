@@ -47,6 +47,17 @@ def sanitize_extract_path(target_dir: str, member_path: str) -> str:
         raise ExtractionError(f"Attempted path traversal in archive member: {member_path}")
     return resolved_dest
 
+def is_elf_executable(filepath: str) -> bool:
+    """Check if a file has an ELF binary header (\x7fELF)."""
+    try:
+        if not os.path.isfile(filepath):
+            return False
+        with open(filepath, "rb") as f:
+            header = f.read(4)
+            return header == b"\x7fELF"
+    except Exception:
+        return False
+
 def make_executable(filepath: str) -> None:
     """Grant executable permissions (chmod +x / 0o755) to binaries, shell scripts, and AppImages."""
     try:
@@ -60,56 +71,49 @@ def inspect_and_mark_executables(target_dir: str) -> None:
     for root, _, files in os.walk(target_dir):
         for file in files:
             full_path = os.path.join(root, file)
-            is_executable = False
-            
-            if file.endswith(".AppImage") or file.endswith(".sh") or file.endswith(".bin"):
-                is_executable = True
-            else:
-                # Check ELF magic number (\x7fELF)
-                try:
-                    with open(full_path, "rb") as f:
-                        header = f.read(4)
-                        if header == b"\x7fELF":
-                            is_executable = True
-                except Exception:
-                    pass
-            
-            if is_executable:
+            if file.endswith((".AppImage", ".sh", ".bin")) or is_elf_executable(full_path):
                 make_executable(full_path)
 
 def find_executable(install_path: str) -> Optional[str]:
-    """Locate the best executable (AppImage, script, binary) inside the package installation directory."""
+    """Locate the best executable (AppImage, script, binary, ELF) inside the package installation directory."""
     if not os.path.exists(install_path):
         return None
-    if os.path.isfile(install_path) and os.access(install_path, os.X_OK):
-        return install_path
+    if os.path.isfile(install_path):
+        if os.access(install_path, os.X_OK) or is_elf_executable(install_path):
+            make_executable(install_path)
+            return install_path
 
     if os.path.isdir(install_path):
         # 1. Search for .AppImage
         for f in sorted(os.listdir(install_path)):
             full = os.path.join(install_path, f)
             if os.path.isfile(full) and f.endswith(".AppImage"):
+                make_executable(full)
                 return full
 
         # 2. Search for shell script launchers (.sh)
         for f in sorted(os.listdir(install_path)):
             full = os.path.join(install_path, f)
             if os.path.isfile(full) and f.endswith(".sh"):
+                make_executable(full)
                 return full
 
-        # 3. Search for root executables or .bin
+        # 3. Search for root executables, .bin, or ELF binaries
         for f in sorted(os.listdir(install_path)):
             full = os.path.join(install_path, f)
-            if os.path.isfile(full) and (f.endswith(".bin") or os.access(full, os.X_OK)):
-                return full
+            if os.path.isfile(full) and not f.startswith(".") and not f.endswith((".dll", ".so", ".json", ".txt", ".md", ".png", ".jpg", ".svg", ".log", ".ttf", ".rcss")):
+                if f.endswith(".bin") or is_elf_executable(full) or os.access(full, os.X_OK):
+                    make_executable(full)
+                    return full
 
         # 4. Recursively check subdirectories
         for root, _, files in os.walk(install_path):
             for f in sorted(files):
                 full = os.path.join(root, f)
-                if f.endswith(".AppImage") or f.endswith(".sh"):
-                    return full
-                if os.path.isfile(full) and os.access(full, os.X_OK):
+                if f.startswith(".") or f.endswith((".dll", ".so", ".json", ".txt", ".md", ".png", ".jpg", ".svg", ".log", ".ttf", ".rcss")):
+                    continue
+                if f.endswith(".AppImage") or f.endswith(".sh") or f.endswith(".bin") or is_elf_executable(full) or os.access(full, os.X_OK):
+                    make_executable(full)
                     return full
 
 def _is_archive_file(filepath: str) -> bool:
@@ -329,11 +333,16 @@ def list_executables(install_path: str) -> List[Dict[str, Any]]:
             full_path = os.path.join(root, f)
             rel_path = os.path.relpath(full_path, install_path)
 
-            if f.startswith(".") or f.endswith((".dll", ".so", ".json", ".txt", ".md", ".png", ".jpg", ".svg", ".log")):
+            lower = f.lower()
+            if (
+                f.startswith(".")
+                or ".so." in lower
+                or lower.endswith((".dll", ".so", ".json", ".txt", ".md", ".png", ".jpg", ".svg", ".log", ".ttf", ".rcss", ".toml", ".yaml", ".yml", ".ini"))
+                or (lower.startswith("lib") and ".so" in lower)
+            ):
                 continue
 
             is_exec = False
-            lower = f.lower()
             if lower.endswith((".appimage", ".sh", ".bin", ".x86_64", ".exe")):
                 is_exec = True
             elif is_elf_executable(full_path):

@@ -322,7 +322,7 @@ export function InstalledTab({
               const isExpanded = !!expandedIds[pkg.id];
               const isUpgrading = upgradingId === pkg.id;
               const isAdding = addingSteamId === pkg.id;
-              const isAdded = !addedSteamIds[pkg.id];
+              const isAdded = Boolean(addedSteamIds[pkg.id]);
               const isConfirmingDelete = deletingId === pkg.id;
 
               const exes = executablesMap[pkg.id] || [];
