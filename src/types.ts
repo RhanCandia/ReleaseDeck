@@ -20,6 +20,13 @@ export interface GitHubRelease {
   assets: GitHubAsset[];
 }
 
+export interface AppExecutableInfo {
+  path: string;
+  rel_path: string;
+  filename: string;
+  is_default: boolean;
+}
+
 export interface InstalledPackage {
   id: string;
   name: string;

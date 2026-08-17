@@ -72,5 +72,28 @@ class TestDownloader(unittest.TestCase):
         st = os.stat(app_bin)
         self.assertTrue(bool(st.st_mode & stat.S_IXUSR))
 
+    def test_nested_archive_extraction(self):
+        # Create a nested tar.gz inside a zip
+        tar_path = os.path.join(self.test_dir, "inner.tar.gz")
+        with tarfile.open(tar_path, "w:gz") as tf:
+            info = tarfile.TarInfo(name="nested_game")
+            content = b"\x7fELFgamebinary"
+            info.size = len(content)
+            import io
+            tf.addfile(info, io.BytesIO(content))
+
+        zip_path = os.path.join(self.test_dir, "outer.zip")
+        with zipfile.ZipFile(zip_path, "w") as zf:
+            zf.write(tar_path, arcname="inner.tar.gz")
+
+        extract_target = os.path.join(self.test_dir, "extracted_nested")
+        Downloader.extract_archive(zip_path, extract_target)
+
+        # Verify the nested executable was unpacked and marked executable
+        nested_bin = os.path.join(extract_target, "nested_game")
+        self.assertTrue(os.path.exists(nested_bin))
+        st = os.stat(nested_bin)
+        self.assertTrue(bool(st.st_mode & stat.S_IXUSR))
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,5 @@
 import { callable } from "@decky/api";
-import { GitHubRelease, InstalledPackage, PluginSettings, DownloadProgress } from "./types";
+import { GitHubRelease, InstalledPackage, PluginSettings, DownloadProgress, AppExecutableInfo } from "./types";
 
 const fetchReleasesCallable = callable<[repo: string], { success: boolean; releases?: GitHubRelease[]; error?: string; is_rate_limit?: boolean }>("fetch_releases");
 const startDownloadCallable = callable<
@@ -8,7 +8,9 @@ const startDownloadCallable = callable<
 >("start_download");
 const cancelDownloadCallable = callable<[], { success: boolean; error?: string }>("cancel_download");
 const getInstalledPackagesCallable = callable<[], InstalledPackage[]>("get_installed_packages");
-const launchPackageCallable = callable<[package_id: string], { success: boolean; executable?: string; error?: string }>("launch_package");
+const getAppExecutablesCallable = callable<[package_id: string], { success: boolean; name?: string; executables?: AppExecutableInfo[]; install_path?: string; error?: string }>("get_app_executables");
+const getAppExecutableCallable = callable<[package_id: string, target_exe?: string], { success: boolean; name?: string; exe_path?: string; install_path?: string; error?: string }>("get_app_executable");
+const addToSteamCallable = callable<[package_id: string, target_exe?: string], { success: boolean; name?: string; executable?: string; error?: string }>("add_to_steam");
 const uninstallPackageCallable = callable<[package_id: string, delete_files: boolean], { success: boolean; error?: string }>("uninstall_package");
 const checkAllUpdatesCallable = callable<[], InstalledPackage[]>("check_all_updates");
 const upgradePackageCallable = callable<[package_id: string], { success: boolean; package?: InstalledPackage; error?: string }>("upgrade_package");
@@ -35,7 +37,9 @@ export const Api = {
   ),
   cancelDownload: () => cancelDownloadCallable(),
   getInstalledPackages: () => getInstalledPackagesCallable(),
-  launchPackage: (packageId: string) => launchPackageCallable(packageId),
+  getAppExecutables: (packageId: string) => getAppExecutablesCallable(packageId),
+  getAppExecutable: (packageId: string, targetExe?: string) => getAppExecutableCallable(packageId, targetExe),
+  addToSteam: (packageId: string, targetExe?: string) => addToSteamCallable(packageId, targetExe),
   uninstallPackage: (packageId: string, deleteFiles: boolean = true) => uninstallPackageCallable(packageId, deleteFiles),
   checkAllUpdates: () => checkAllUpdatesCallable(),
   upgradePackage: (packageId: string) => upgradePackageCallable(packageId),

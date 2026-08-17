@@ -124,7 +124,7 @@ export function DownloadTab({
   };
 
   const handleStartDownload = async (repo: string, release: GitHubRelease, asset: GitHubAsset) => {
-    const displayName = release.name || repo.split("/")[1] || repo;
+    const displayName = repo.split("/")[1] || release.name || repo;
     setIsInitiatingDownload(true);
     setLastInstalledName(null);
 

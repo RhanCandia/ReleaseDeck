@@ -109,8 +109,8 @@ else
         "${DECK_USER}@${DECK_IP}:${REMOTE_PLUGIN_DIR}/"
 fi
 
-echo -e "${CYAN}==> [4/4] Reloading Decky Loader on Steam Deck...${NC}"
-ssh -p "$DECK_PORT" "${DECK_USER}@${DECK_IP}" "sudo systemctl restart plugin_loader 2>/dev/null || echo 'Note: If prompted for password, enter your deck sudo password to reload the loader.'" || true
+echo -e "${CYAN}==> [4/4] Reloading ReleaseDeck on Steam Deck...${NC}"
+ssh -p "$DECK_PORT" "${DECK_USER}@${DECK_IP}" "pkill -f 'ReleaseDeck/main.py' 2>/dev/null || true; sudo systemctl restart plugin_loader 2>/dev/null || true" || true
 
 echo -e "${GREEN}✓ ReleaseDeck successfully deployed to your Steam Deck!${NC}"
 echo -e "Open the Quick Access Menu (${CYAN}...${NC} button) in Gaming Mode to see ReleaseDeck."

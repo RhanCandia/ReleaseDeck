@@ -10,9 +10,27 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import subprocess
 import decky
 from backend.github_api import GitHubClient, GitHubAPIError
-from backend.downloader import Downloader, DownloadCancelledError, ExtractionError, find_executable
+from backend.downloader import (
+    Downloader,
+    DownloadCancelledError,
+    ExtractionError,
+    find_executable,
+    create_app_launcher,
+    list_executables,
+)
 from backend.package_db import PackageDB, DEFAULT_INSTALL_DIR
 from backend.updater import is_newer_version, find_matching_upgrade_asset
+
+def get_clean_app_name(pkg: Dict[str, Any]) -> str:
+    repo = pkg.get("repository", "")
+    if repo and "/" in repo:
+        repo_base = repo.split("/")[-1].strip()
+        if repo_base:
+            return repo_base
+    name = pkg.get("name", "").strip()
+    if name and not (name.startswith("v") and len(name) > 1 and name[1].isdigit()):
+        return name
+    return repo or "Application"
 
 class Plugin:
     def __init__(self):
@@ -214,8 +232,60 @@ class Plugin:
             return []
         return self.package_db.get_all_packages()
 
-    async def launch_package(self, package_id: str) -> Dict[str, Any]:
-        """Launch the package executable in a detached background process."""
+    async def get_app_executables(self, package_id: str) -> Dict[str, Any]:
+        """List all candidate executables found in the package install folder."""
+        if not self.package_db:
+            return {"success": False, "error": "Database not initialized."}
+
+        pkg = self.package_db.get_package(package_id)
+        if not pkg:
+            return {"success": False, "error": "Package not found."}
+
+        install_path = pkg.get("install_path", "")
+        display_name = get_clean_app_name(pkg)
+        executables = list_executables(install_path)
+
+        return {
+            "success": True,
+            "name": display_name,
+            "executables": executables,
+            "install_path": install_path,
+        }
+
+    async def get_app_executable(self, package_id: str, target_exe: Optional[str] = None) -> Dict[str, Any]:
+        """Find executable path and ensure clean launcher exists for direct SteamClient shortcut creation."""
+        if not self.package_db:
+            return {"success": False, "error": "Database not initialized."}
+
+        pkg = self.package_db.get_package(package_id)
+        if not pkg:
+            return {"success": False, "error": "Package not found."}
+
+        install_path = pkg.get("install_path", "")
+        display_name = get_clean_app_name(pkg)
+
+        launcher_path = create_app_launcher(install_path, display_name, target_exe=target_exe)
+        if not launcher_path or not os.path.exists(launcher_path):
+            exe_path = target_exe or find_executable(install_path)
+            if not exe_path or not os.path.exists(exe_path):
+                return {"success": False, "error": f"No executable found in {install_path}"}
+            launcher_path = exe_path
+
+        try:
+            st = os.stat(launcher_path)
+            os.chmod(launcher_path, st.st_mode | 0o755)
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "name": display_name,
+            "exe_path": launcher_path,
+            "install_path": install_path,
+        }
+
+    async def add_to_steam(self, package_id: str, target_exe: Optional[str] = None) -> Dict[str, Any]:
+        """Add the installed package executable to Steam as a Non-Steam game shortcut."""
         if not self.package_db:
             return {"success": False, "error": "Database not initialized."}
         
@@ -224,33 +294,64 @@ class Plugin:
             return {"success": False, "error": "Package not found."}
 
         install_path = pkg.get("install_path", "")
-        exe_path = find_executable(install_path)
-        if not exe_path:
+        display_name = get_clean_app_name(pkg)
+
+        # Ensure a launcher named after the app exists (e.g. SymphonyRecomp)
+        launcher_path = create_app_launcher(install_path, display_name, target_exe=target_exe)
+        if not launcher_path or not os.path.exists(launcher_path):
             return {"success": False, "error": f"No executable found in {install_path}"}
 
         try:
-            # Ensure file is marked executable
             try:
-                st = os.stat(exe_path)
-                os.chmod(exe_path, st.st_mode | 0o755)
+                st = os.stat(launcher_path)
+                os.chmod(launcher_path, st.st_mode | 0o755)
             except Exception:
                 pass
 
-            work_dir = os.path.dirname(exe_path)
-            decky.logger.info(f"Launching application: {exe_path} from {work_dir}")
+            decky.logger.info(f"Adding '{display_name}' ({launcher_path}) to Steam via IPC")
 
-            cmd = ["/bin/bash", exe_path] if exe_path.endswith(".sh") else [exe_path]
+            # 1. Use steamos-add-to-steam if available (official SteamOS IPC)
+            steamos_add = "/usr/bin/steamos-add-to-steam"
+            added = False
+            if os.path.exists(steamos_add):
+                try:
+                    res = await asyncio.to_thread(
+                        subprocess.run,
+                        [steamos_add, launcher_path],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    if res.returncode == 0:
+                        added = True
+                except Exception as e:
+                    decky.logger.warning(f"steamos-add-to-steam call failed: {e}")
 
-            subprocess.Popen(
-                cmd,
-                cwd=work_dir,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True
-            )
-            return {"success": True, "executable": exe_path}
+            # 2. Fallback to steam:// IPC protocol
+            if not added:
+                import urllib.parse
+                import shutil
+                encoded = urllib.parse.quote(launcher_path, safe='')
+                url = f"steam://addnonsteamgame/{encoded}"
+                if shutil.which("steam"):
+                    try:
+                        subprocess.Popen(
+                            ["steam", url],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            start_new_session=True
+                        )
+                        added = True
+                    except Exception as e:
+                        decky.logger.warning(f"steam url IPC error: {e}")
+
+            return {
+                "success": True,
+                "name": display_name,
+                "executable": launcher_path
+            }
         except Exception as e:
-            decky.logger.error(f"Failed to launch {exe_path}: {e}")
+            decky.logger.error(f"Failed to add to Steam {launcher_path}: {e}")
             return {"success": False, "error": str(e)}
 
     async def uninstall_package(self, package_id: str, delete_files: bool = True) -> Dict[str, Any]:

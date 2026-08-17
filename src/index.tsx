@@ -241,6 +241,16 @@ function ReleaseDeckContent() {
           border-color: rgba(46, 204, 113, 0.3) !important;
           color: #a3e9c0 !important;
         }
+        .rd-card-btn-steam {
+          background-color: rgba(26, 159, 255, 0.18) !important;
+          border-color: rgba(26, 159, 255, 0.45) !important;
+          color: #74c0fc !important;
+        }
+        .rd-card-btn-steam.rd-steam-added {
+          background-color: rgba(46, 204, 113, 0.18) !important;
+          border-color: rgba(46, 204, 113, 0.45) !important;
+          color: #a3e9c0 !important;
+        }
         .rd-card-btn-installed {
           background-color: rgba(46, 204, 113, 0.12) !important;
           border-color: rgba(46, 204, 113, 0.3) !important;

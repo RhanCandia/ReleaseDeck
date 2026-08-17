@@ -7,19 +7,24 @@ import {
   Spinner,
 } from "@decky/ui";
 import { toaster } from "@decky/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaSync,
   FaTrash,
   FaArrowUp,
-  FaPlay,
+  FaSteam,
   FaGithub,
   FaBoxOpen,
   FaExclamationCircle,
+  FaCheck,
+  FaCog,
+  FaChevronDown,
 } from "react-icons/fa";
 import { Api } from "../api";
-import { InstalledPackage } from "../types";
+import { InstalledPackage, AppExecutableInfo } from "../types";
 import { formatBytes } from "../utils/format";
+
+declare const SteamClient: any;
 
 interface InstalledTabProps {
   packages: InstalledPackage[];
@@ -36,8 +41,46 @@ export function InstalledTab({
 }: InstalledTabProps) {
   const [isCheckingUpdates, setIsCheckingUpdates] = useState<boolean>(false);
   const [upgradingId, setUpgradingId] = useState<string | null>(null);
-  const [launchingId, setLaunchingId] = useState<string | null>(null);
+  const [addingSteamId, setAddingSteamId] = useState<string | null>(null);
+  const [addedSteamIds, setAddedSteamIds] = useState<Record<string, boolean>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [executablesMap, setExecutablesMap] = useState<Record<string, AppExecutableInfo[]>>({});
+  const [selectedExeMap, setSelectedExeMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    packages.forEach(async (pkg) => {
+      try {
+        const res = await Api.getAppExecutables(pkg.id);
+        if (res.success && res.executables && res.executables.length > 0) {
+          setExecutablesMap((prev) => ({ ...prev, [pkg.id]: res.executables || [] }));
+          const defaultExe = res.executables.find((e) => e.is_default)?.path || res.executables[0]?.path || "";
+          setSelectedExeMap((prev) => ({ ...prev, [pkg.id]: prev[pkg.id] || defaultExe }));
+        }
+      } catch (e) {
+        console.warn("Could not fetch executables for", pkg.id, e);
+      }
+    });
+  }, [packages]);
+
+  const handleCycleExecutable = (pkgId: string) => {
+    const exes = executablesMap[pkgId] || [];
+    if (exes.length <= 1) {
+      toaster.toast({
+        title: "Executable",
+        body: exes[0]?.filename || "Default executable",
+      });
+      return;
+    }
+    const currentPath = selectedExeMap[pkgId];
+    const currentIndex = exes.findIndex((e) => e.path === currentPath);
+    const nextIndex = (currentIndex + 1) % exes.length;
+    const nextExe = exes[nextIndex];
+    setSelectedExeMap((prev) => ({ ...prev, [pkgId]: nextExe.path }));
+    toaster.toast({
+      title: "Selected Executable",
+      body: nextExe.filename,
+    });
+  };
 
   const handleCheckUpdates = async () => {
     setIsCheckingUpdates(true);
@@ -61,33 +104,71 @@ export function InstalledTab({
     }
   };
 
-  const handleLaunch = async (pkg: InstalledPackage) => {
-    setLaunchingId(pkg.id);
-    toaster.toast({
-      title: "ReleaseDeck",
-      body: `Launching ${pkg.name || pkg.repository}...`,
-    });
+  const handleAddToSteam = async (pkg: InstalledPackage, selectedTargetExe?: string) => {
+    setAddingSteamId(pkg.id);
 
     try {
-      const res = await Api.launchPackage(pkg.id);
-      if (res.success) {
+      // 1. Ensure launcher exists and get clean path
+      const res = await Api.getAppExecutable(pkg.id, selectedTargetExe);
+      if (!res.success || !res.exe_path) {
         toaster.toast({
-          title: "App Launched",
-          body: `Running ${pkg.name || pkg.repository}`,
+          title: "Add to Steam Failed",
+          body: res.error || "Executable not found.",
         });
-      } else {
+        return;
+      }
+
+      // Ensure proper game title from repo name (strip version numbers)
+      const cleanRepo = pkg.repository ? pkg.repository.split("/")[1] : "";
+      const displayName = cleanRepo || res.name || pkg.name || "Application";
+      const exePath = res.exe_path;
+      const startDir = res.install_path || "";
+
+      // 2. Call Steam's Gamepad UI client API directly in frontend
+      let added = false;
+      if (typeof SteamClient !== "undefined" && SteamClient.Apps?.AddShortcut) {
+        try {
+          const id = await SteamClient.Apps.AddShortcut(displayName, exePath, startDir, "");
+          setTimeout(() => {
+            try {
+              if (SteamClient.Apps?.SetShortcutName) SteamClient.Apps.SetShortcutName(id, displayName);
+              if (SteamClient.Apps?.SetShortcutExe) SteamClient.Apps.SetShortcutExe(id, `"${exePath}"`);
+            } catch (err) {}
+          }, 250);
+          added = true;
+        } catch (e: any) {
+          console.warn("SteamClient.Apps.AddShortcut error:", e);
+        }
+      }
+
+      // 3. Fallback to backend API if SteamClient JS was not available
+      if (!added) {
+        const backendRes = await Api.addToSteam(pkg.id, selectedTargetExe);
+        if (backendRes.success) {
+          added = true;
+        } else {
+          toaster.toast({
+            title: "Add to Steam Failed",
+            body: backendRes.error || "Could not add shortcut.",
+          });
+          return;
+        }
+      }
+
+      if (added) {
+        setAddedSteamIds((prev) => ({ ...prev, [pkg.id]: true }));
         toaster.toast({
-          title: "Launch Failed",
-          body: res.error || "Could not launch executable.",
+          title: "Added to Steam",
+          body: `${displayName} added to your Steam Library!`,
         });
       }
     } catch (e: any) {
       toaster.toast({
-        title: "Launch Error",
-        body: e?.message || "Unexpected error while launching.",
+        title: "Add to Steam Error",
+        body: e?.message || "Unexpected error while adding shortcut.",
       });
     } finally {
-      setLaunchingId(null);
+      setAddingSteamId(null);
     }
   };
 
@@ -182,46 +263,65 @@ export function InstalledTab({
         <PanelSectionRow>
           <div
             style={{
-              padding: "16px 8px",
+              padding: "16px",
               textAlign: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.03)",
+              border: "1px dashed rgba(255, 255, 255, 0.15)",
+              borderRadius: "8px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "6px",
-              opacity: 0.8,
+              gap: "8px",
               width: "100%",
               boxSizing: "border-box",
             }}
           >
-            <FaBoxOpen size={28} />
-            <div style={{ fontSize: "13px", fontWeight: "bold" }}>No Apps Installed Yet</div>
-            <div style={{ fontSize: "11px", opacity: 0.7 }}>
-              Download game ports and tools directly from GitHub.
+            <FaBoxOpen size={24} style={{ color: "#74c0fc", opacity: 0.7 }} />
+            <div style={{ fontSize: "12px", color: "#ffffff", fontWeight: "bold" }}>
+              No Applications Installed
             </div>
-            <div style={{ marginTop: "6px", width: "100%" }}>
-              <ButtonItem layout="below" onClick={onNavigateToDownload}>
-                <span style={{ fontSize: "11px" }}>Browse & Download</span>
-              </ButtonItem>
+            <div style={{ fontSize: "10px", color: "#9aa4af", maxWidth: "220px" }}>
+              Download packages and releases from your tracked GitHub repositories.
             </div>
+            <DialogButton
+              className="rd-card-btn rd-card-btn-launch"
+              onClick={onNavigateToDownload}
+              style={{
+                marginTop: "4px",
+                padding: "6px 12px",
+                fontSize: "11px",
+                fontWeight: "bold",
+                height: "auto",
+              }}
+            >
+              Browse Downloads ➔
+            </DialogButton>
           </div>
         </PanelSectionRow>
       )}
 
-      {/* App List */}
+      {/* Installed Packages List */}
       {!isLoading &&
         packages.map((pkg) => {
           const isUpgrading = upgradingId === pkg.id;
-          const isLaunching = launchingId === pkg.id;
+          const isAdding = addingSteamId === pkg.id;
+          const isAdded = !!addedSteamIds[pkg.id];
           const isConfirmingDelete = deletingId === pkg.id;
+
+          const exes = executablesMap[pkg.id] || [];
+          const selectedExePath = selectedExeMap[pkg.id] || (exes.find((e) => e.is_default)?.path || exes[0]?.path || "");
+          const selectedExeObj = exes.find((e) => e.path === selectedExePath);
+          const selectedExeName = selectedExeObj ? selectedExeObj.filename : (exes[0]?.filename || "Default Exe");
+          const hasMultipleExes = exes.length > 1;
 
           return (
             <PanelSectionRow key={pkg.id}>
               <div
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: pkg.has_update ? "1px solid #f59f00" : "1px solid rgba(255, 255, 255, 0.1)",
-                  borderRadius: "6px",
-                  padding: "8px 10px",
+                  padding: "10px",
+                  backgroundColor: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "8px",
                   display: "flex",
                   flexDirection: "column",
                   gap: "6px",
@@ -229,130 +329,187 @@ export function InstalledTab({
                   boxSizing: "border-box",
                 }}
               >
-                {/* Header: Repo Name & Update Badge */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
-                    <FaGithub style={{ flexShrink: 0, opacity: 0.8, fontSize: "13px" }} />
-                    <div
-                      style={{
-                        fontWeight: "bold",
-                        fontSize: "12px",
-                        color: "#ffffff",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                      title={pkg.repository}
-                    >
-                      {pkg.repository || pkg.name}
-                    </div>
+                {/* Top Row: Repository Name + Version Badge */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      color: "#ffffff",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      flex: 1,
+                    }}
+                  >
+                    <FaGithub size={13} color="#74c0fc" style={{ flexShrink: 0 }} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {pkg.repository}
+                    </span>
                   </div>
-                  {pkg.has_update ? (
+
+                  {/* Version tag */}
+                  <span
+                    style={{
+                      fontSize: "9px",
+                      backgroundColor: "rgba(255, 255, 255, 0.12)",
+                      color: "#e2e8f0",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      fontWeight: "bold",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {pkg.installed_version}
+                  </span>
+
+                  {/* Update indicator */}
+                  {pkg.has_update && (
                     <span
                       style={{
+                        fontSize: "8px",
                         backgroundColor: "#f59f00",
                         color: "#000000",
-                        fontSize: "9px",
-                        fontWeight: "bold",
-                        padding: "1px 5px",
+                        padding: "1px 4px",
                         borderRadius: "3px",
+                        fontWeight: "bold",
+                        flexShrink: 0,
                         display: "flex",
                         alignItems: "center",
-                        gap: "3px",
-                        flexShrink: 0,
+                        gap: "2px",
                       }}
                     >
-                      <FaExclamationCircle /> Update
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.1)",
-                        color: "#969ba3",
-                        fontSize: "9px",
-                        padding: "1px 5px",
-                        borderRadius: "3px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {pkg.installed_version}
+                      <FaExclamationCircle size={8} /> New
                     </span>
                   )}
                 </div>
 
-                {/* Subtext info */}
+                {/* Subtext info: Asset & Size */}
                 <div style={{ fontSize: "10px", color: "#969ba3", display: "flex", justifyContent: "space-between", gap: "4px" }}>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {pkg.name && pkg.name !== pkg.repository ? pkg.name : `Ver: ${pkg.installed_version}`}
+                    {pkg.installed_asset || pkg.name}
                   </span>
                   <span style={{ flexShrink: 0 }}>
                     {formatBytes(pkg.size_bytes)}
                   </span>
                 </div>
 
-                {/* 3 Buttons: Launch, Update, Delete */}
-                <Focusable
-                  flow-children="horizontal"
-                  style={{
-                    display: "flex",
-                    gap: "4px",
-                    width: "100%",
-                    marginTop: "2px",
-                  }}
-                >
-                  <DialogButton
-                    className="rd-card-btn rd-card-btn-launch"
-                    disabled={isLaunching}
-                    onClick={() => handleLaunch(pkg)}
+                {/* Action Buttons: Row 1 (Executable Selector + Add to Steam) + Row 2 (Update / Delete) */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%", marginTop: "2px" }}>
+                  {/* Row 1: Side-by-Side Executable Selector + Add to Steam */}
+                  <Focusable
+                    flow-children="horizontal"
                     style={{
-                      flex: 1,
-                      minWidth: 0,
-                      padding: "6px 2px",
-                      fontSize: "11px",
-                      height: "auto",
+                      display: "flex",
+                      gap: "5px",
+                      width: "100%",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      <FaPlay size={10} style={{ flexShrink: 0 }} />
-                      <span>{isLaunching ? "Starting..." : "Launch"}</span>
-                    </div>
-                  </DialogButton>
+                    {/* Left: Executable Selector */}
+                    <DialogButton
+                      className="rd-card-btn"
+                      onClick={() => handleCycleExecutable(pkg.id)}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "7px 8px",
+                        fontSize: "10px",
+                        height: "auto",
+                        backgroundColor: "rgba(255, 255, 255, 0.07)",
+                        borderColor: "rgba(255, 255, 255, 0.12)",
+                        color: "#cbd5e1",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "4px", width: "100%" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0, overflow: "hidden" }}>
+                          <FaCog size={10} style={{ flexShrink: 0, opacity: 0.8 }} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: "500" }}>
+                            {selectedExeName}
+                          </span>
+                        </div>
+                        {hasMultipleExes && <FaChevronDown size={8} style={{ flexShrink: 0, opacity: 0.6 }} />}
+                      </div>
+                    </DialogButton>
 
-                  <DialogButton
-                    className={`rd-card-btn rd-card-btn-update ${pkg.has_update ? "rd-update-available" : ""}`}
-                    disabled={isUpgrading}
-                    onClick={() => handleUpgrade(pkg)}
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      padding: "6px 2px",
-                      fontSize: "11px",
-                      height: "auto",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      <FaArrowUp size={10} style={{ flexShrink: 0 }} className={isUpgrading ? "spin-icon" : ""} />
-                      <span>{isUpgrading ? "Updating..." : "Update"}</span>
-                    </div>
-                  </DialogButton>
+                    {/* Right: Add to Steam Button */}
+                    <DialogButton
+                      className={`rd-card-btn rd-card-btn-steam ${isAdded ? "rd-steam-added" : ""}`}
+                      disabled={isAdding}
+                      onClick={() => handleAddToSteam(pkg, selectedExeMap[pkg.id])}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "7px 8px",
+                        fontSize: "11px",
+                        fontWeight: "bold",
+                        height: "auto",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                        {isAdded ? (
+                          <>
+                            <FaCheck color="#2ecc71" size={11} />
+                            <span>Added ✓</span>
+                          </>
+                        ) : (
+                          <>
+                            <FaSteam size={12} style={{ flexShrink: 0 }} />
+                            <span>{isAdding ? "Adding..." : "Add to Steam"}</span>
+                          </>
+                        )}
+                      </div>
+                    </DialogButton>
+                  </Focusable>
 
-                  <DialogButton
-                    className={`rd-card-btn rd-card-btn-delete ${isConfirmingDelete ? "rd-confirm-delete" : ""}`}
-                    onClick={() => handleUninstall(pkg)}
+                  {/* Row 2: Side-by-Side Update & Delete */}
+                  <Focusable
+                    flow-children="horizontal"
                     style={{
-                      flex: 1,
-                      minWidth: 0,
-                      padding: "6px 2px",
-                      fontSize: "11px",
-                      height: "auto",
+                      display: "flex",
+                      gap: "5px",
+                      width: "100%",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      <FaTrash size={10} style={{ flexShrink: 0 }} />
-                      <span>{isConfirmingDelete ? "Confirm?" : "Delete"}</span>
-                    </div>
-                  </DialogButton>
-                </Focusable>
+                    <DialogButton
+                      className={`rd-card-btn rd-card-btn-update ${pkg.has_update ? "rd-update-available" : ""}`}
+                      disabled={isUpgrading}
+                      onClick={() => handleUpgrade(pkg)}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "6px 8px",
+                        fontSize: "11px",
+                        height: "auto",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <FaArrowUp size={10} style={{ flexShrink: 0 }} className={isUpgrading ? "spin-icon" : ""} />
+                        <span>{isUpgrading ? "Updating..." : "Update"}</span>
+                      </div>
+                    </DialogButton>
+
+                    <DialogButton
+                      className={`rd-card-btn rd-card-btn-delete ${isConfirmingDelete ? "rd-confirm-delete" : ""}`}
+                      onClick={() => handleUninstall(pkg)}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "6px 8px",
+                        fontSize: "11px",
+                        height: "auto",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <FaTrash size={10} style={{ flexShrink: 0 }} />
+                        <span>{isConfirmingDelete ? "Confirm?" : "Delete"}</span>
+                      </div>
+                    </DialogButton>
+                  </Focusable>
+                </div>
               </div>
             </PanelSectionRow>
           );
