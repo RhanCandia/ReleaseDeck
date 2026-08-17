@@ -2,6 +2,7 @@ import {
   ButtonItem,
   Dropdown,
   Field,
+  Focusable,
   PanelSection,
   PanelSectionRow,
   ProgressBar,
@@ -83,7 +84,6 @@ export function DownloadTab({
   const currentRelease: GitHubRelease | undefined = releases[selectedReleaseIndex];
   const selectedAsset: GitHubAsset | undefined = currentRelease?.assets.find((a) => a.id === selectedAssetId);
 
-  // When changing release version, pick best asset for that release
   const handleSelectRelease = (index: number) => {
     setSelectedReleaseIndex(index);
     const rel = releases[index];
@@ -317,17 +317,21 @@ export function DownloadTab({
           {/* Package Assets Selector */}
           <PanelSectionRow>
             <Field label="Available Packages & Binaries">
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }}>
+              <Focusable
+                flow-children="vertical"
+                style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }}
+              >
                 {currentRelease?.assets.map((asset) => {
                   const isSelected = asset.id === selectedAssetId;
                   return (
-                    <div
+                    <Focusable
                       key={asset.id}
+                      onActivate={() => setSelectedAssetId(asset.id)}
                       onClick={() => setSelectedAssetId(asset.id)}
                       style={{
                         padding: "8px 10px",
                         borderRadius: "4px",
-                        backgroundColor: isSelected ? "rgba(26, 159, 255, 0.25)" : "rgba(255, 255, 255, 0.05)",
+                        backgroundColor: isSelected ? "rgba(26, 159, 255, 0.3)" : "rgba(255, 255, 255, 0.05)",
                         border: isSelected ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
                         cursor: "pointer",
                         display: "flex",
@@ -337,7 +341,7 @@ export function DownloadTab({
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <span style={{ fontSize: "12px", fontWeight: isSelected ? "bold" : "normal", wordBreak: "break-all" }}>
-                          {asset.name}
+                          {isSelected ? "● " : "○ "} {asset.name}
                         </span>
                         {asset.is_recommended && (
                           <span
@@ -361,10 +365,10 @@ export function DownloadTab({
                       <span style={{ fontSize: "11px", opacity: 0.65 }}>
                         Size: {formatBytes(asset.size)}
                       </span>
-                    </div>
+                    </Focusable>
                   );
                 })}
-              </div>
+              </Focusable>
             </Field>
           </PanelSectionRow>
 

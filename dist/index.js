@@ -204,7 +204,6 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
     };
     const currentRelease = releases[selectedReleaseIndex];
     const selectedAsset = currentRelease?.assets.find((a) => a.id === selectedAssetId);
-    // When changing release version, pick best asset for that release
     const handleSelectRelease = (index) => {
         setSelectedReleaseIndex(index);
         const rel = releases[index];
@@ -304,18 +303,18 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
                                 whiteSpace: "pre-wrap",
                                 lineHeight: "1.4",
                                 opacity: 0.85,
-                            }, children: currentRelease.body }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Available Packages & Binaries", children: SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }, children: currentRelease?.assets.map((asset) => {
+                            }, children: currentRelease.body }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Available Packages & Binaries", children: SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "6px" }, children: currentRelease?.assets.map((asset) => {
                                     const isSelected = asset.id === selectedAssetId;
-                                    return (SP_JSX.jsxs("div", { onClick: () => setSelectedAssetId(asset.id), style: {
+                                    return (SP_JSX.jsxs(DFL.Focusable, { onActivate: () => setSelectedAssetId(asset.id), onClick: () => setSelectedAssetId(asset.id), style: {
                                             padding: "8px 10px",
                                             borderRadius: "4px",
-                                            backgroundColor: isSelected ? "rgba(26, 159, 255, 0.25)" : "rgba(255, 255, 255, 0.05)",
+                                            backgroundColor: isSelected ? "rgba(26, 159, 255, 0.3)" : "rgba(255, 255, 255, 0.05)",
                                             border: isSelected ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
                                             cursor: "pointer",
                                             display: "flex",
                                             flexDirection: "column",
                                             gap: "2px",
-                                        }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [SP_JSX.jsx("span", { style: { fontSize: "12px", fontWeight: isSelected ? "bold" : "normal", wordBreak: "break-all" }, children: asset.name }), asset.is_recommended && (SP_JSX.jsxs("span", { style: {
+                                        }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [SP_JSX.jsxs("span", { style: { fontSize: "12px", fontWeight: isSelected ? "bold" : "normal", wordBreak: "break-all" }, children: [isSelected ? "● " : "○ ", " ", asset.name] }), asset.is_recommended && (SP_JSX.jsxs("span", { style: {
                                                             fontSize: "10px",
                                                             backgroundColor: "#2b8a3e",
                                                             color: "#fff",
@@ -515,7 +514,7 @@ function SettingsTab({ settings, onSettingsSaved }) {
         const updated = pinnedRepos.filter((r) => r !== repoToRemove);
         setPinnedRepos(updated);
     };
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Settings & Configuration", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Personal Access Token", value: token, onChange: (e) => setToken(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.7, lineHeight: "1.4" }, children: [SP_JSX.jsx(FaInfoCircle, {}), " Adding a classic GitHub token (no permissions needed) prevents \"403 Rate Limit\" errors when browsing releases."] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Default Install Directory", value: installDir, onChange: (e) => setInstallDir(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Favorite Repositories", children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "4px" }, children: [pinnedRepos.map((repo) => (SP_JSX.jsxs("div", { style: {
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Settings & Configuration", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Personal Access Token", value: token, onChange: (e) => setToken(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.7, lineHeight: "1.4" }, children: [SP_JSX.jsx(FaInfoCircle, {}), " Adding a classic GitHub token (no permissions needed) prevents \"403 Rate Limit\" errors when browsing releases."] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Default Install Directory", value: installDir, onChange: (e) => setInstallDir(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Favorite Repositories", children: SP_JSX.jsxs(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "4px" }, children: [pinnedRepos.map((repo) => (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "horizontal", style: {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
@@ -523,11 +522,11 @@ function SettingsTab({ settings, onSettingsSaved }) {
                                     borderRadius: "4px",
                                     backgroundColor: "rgba(255, 255, 255, 0.05)",
                                     fontSize: "12px",
-                                }, children: [SP_JSX.jsx("span", { children: repo }), SP_JSX.jsx("span", { style: { cursor: "pointer", color: "#ff6b6b", padding: "2px 6px" }, onClick: () => handleRemovePinnedRepo(repo), children: SP_JSX.jsx(FaTrash, {}) })] }, repo))), SP_JSX.jsxs("div", { style: { display: "flex", gap: "6px", marginTop: "4px" }, children: [SP_JSX.jsx("div", { style: { flex: 1 }, children: SP_JSX.jsx(DFL.TextField, { label: "Add repo (owner/repo)", value: newRepo, onChange: (e) => setNewRepo(e.target.value) }) }), SP_JSX.jsx("div", { style: { alignSelf: "flex-end", marginBottom: "4px" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: handleAddPinnedRepo, children: SP_JSX.jsx(FaPlus, {}) }) })] })] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isSaving, onClick: handleSaveSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }, children: [SP_JSX.jsx(FaSave, {}), isSaving ? "Saving..." : "Save Settings"] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { textAlign: "center", fontSize: "11px", opacity: 0.5, padding: "8px" }, children: "ReleaseDeck v0.1.0-alpha.2 \u2022 SteamOS Gaming Mode" }) })] }));
+                                }, children: [SP_JSX.jsx("span", { children: repo }), SP_JSX.jsx("span", { style: { cursor: "pointer", color: "#ff6b6b", padding: "2px 6px" }, onClick: () => handleRemovePinnedRepo(repo), children: SP_JSX.jsx(FaTrash, {}) })] }, repo))), SP_JSX.jsxs("div", { style: { display: "flex", gap: "6px", marginTop: "4px" }, children: [SP_JSX.jsx("div", { style: { flex: 1 }, children: SP_JSX.jsx(DFL.TextField, { label: "Add repo (owner/repo)", value: newRepo, onChange: (e) => setNewRepo(e.target.value) }) }), SP_JSX.jsx("div", { style: { alignSelf: "flex-end", marginBottom: "4px" }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: handleAddPinnedRepo, children: SP_JSX.jsx(FaPlus, {}) }) })] })] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isSaving, onClick: handleSaveSettings, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }, children: [SP_JSX.jsx(FaSave, {}), isSaving ? "Saving..." : "Save Settings"] }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { textAlign: "center", fontSize: "11px", opacity: 0.5, padding: "8px" }, children: "ReleaseDeck v0.1.0-beta.2 \u2022 SteamOS Gaming Mode" }) })] }));
 }
 
 function ReleaseDeckContent() {
-    const [activeTab, setActiveTab] = SP_REACT.useState("installed");
+    const [activeTab, setActiveTab] = SP_REACT.useState("download");
     const [installedPackages, setInstalledPackages] = SP_REACT.useState([]);
     const [isLoadingInstalled, setIsLoadingInstalled] = SP_REACT.useState(false);
     const [settings, setSettings] = SP_REACT.useState(null);
@@ -538,9 +537,8 @@ function ReleaseDeckContent() {
         try {
             const pkgs = await Api.getInstalledPackages();
             setInstalledPackages(pkgs);
-            // If we have no packages installed yet, default tab to download
-            if (pkgs.length === 0 && activeTab === "installed") {
-                setActiveTab("download");
+            if (pkgs.length > 0 && activeTab !== "settings") {
+                setActiveTab("installed");
             }
         }
         catch (e) {
@@ -573,53 +571,36 @@ function ReleaseDeckContent() {
             removeEventListener("download_progress", progressListener);
         };
     }, []);
-    return (SP_JSX.jsxs("div", { children: [SP_JSX.jsx(DFL.PanelSection, { children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
+    return (SP_JSX.jsxs("div", { style: { padding: "0 4px" }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "horizontal", style: {
+                    display: "flex",
+                    gap: "6px",
+                    width: "100%",
+                    marginBottom: "12px",
+                }, children: [SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("installed"), style: {
+                            flex: 1,
+                            backgroundColor: activeTab === "installed" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
+                            border: activeTab === "installed" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
+                            padding: "8px 4px",
+                            fontSize: "12px",
+                            height: "auto",
+                        }, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }, children: [SP_JSX.jsx(FaBox, {}), " Installed ", installedPackages.length > 0 ? `(${installedPackages.length})` : ""] }) }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("download"), style: {
+                            flex: 1,
+                            backgroundColor: activeTab === "download" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
+                            border: activeTab === "download" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
+                            padding: "8px 4px",
+                            fontSize: "12px",
+                            height: "auto",
+                        }, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }, children: [SP_JSX.jsx(FaDownload, {}), " Download"] }) }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => setActiveTab("settings"), style: {
+                            width: "42px",
+                            minWidth: "42px",
+                            backgroundColor: activeTab === "settings" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
+                            border: activeTab === "settings" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
+                            padding: "8px",
+                            height: "auto",
                             display: "flex",
-                            gap: "4px",
-                            width: "100%",
-                            backgroundColor: "rgba(0,0,0,0.3)",
-                            padding: "4px",
-                            borderRadius: "6px",
-                        }, children: [SP_JSX.jsxs("button", { onClick: () => setActiveTab("installed"), style: {
-                                    flex: 1,
-                                    padding: "8px 4px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    backgroundColor: activeTab === "installed" ? "#1a9fff" : "transparent",
-                                    color: "#ffffff",
-                                    fontSize: "12px",
-                                    fontWeight: activeTab === "installed" ? "bold" : "normal",
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: "6px",
-                                }, children: [SP_JSX.jsx(FaBox, {}), " Installed ", installedPackages.length > 0 && `(${installedPackages.length})`] }), SP_JSX.jsxs("button", { onClick: () => setActiveTab("download"), style: {
-                                    flex: 1,
-                                    padding: "8px 4px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    backgroundColor: activeTab === "download" ? "#1a9fff" : "transparent",
-                                    color: "#ffffff",
-                                    fontSize: "12px",
-                                    fontWeight: activeTab === "download" ? "bold" : "normal",
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: "6px",
-                                }, children: [SP_JSX.jsx(FaDownload, {}), " Download"] }), SP_JSX.jsx("button", { onClick: () => setActiveTab("settings"), style: {
-                                    padding: "8px 12px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    backgroundColor: activeTab === "settings" ? "#1a9fff" : "transparent",
-                                    color: "#ffffff",
-                                    fontSize: "12px",
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }, children: SP_JSX.jsx(FaCog, {}) })] }) }) }), activeTab === "download" && (SP_JSX.jsx(DownloadTab, { settings: settings, downloadProgress: downloadProgress, onDownloadStarted: () => { }, onInstalledRefresh: refreshInstalled })), activeTab === "installed" && (SP_JSX.jsx(InstalledTab, { packages: installedPackages, isLoading: isLoadingInstalled, onRefresh: refreshInstalled, onNavigateToDownload: () => setActiveTab("download") })), activeTab === "settings" && (SP_JSX.jsx(SettingsTab, { settings: settings, onSettingsSaved: (newSettings) => setSettings(newSettings) }))] }));
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }, children: SP_JSX.jsx(FaCog, {}) })] }), activeTab === "download" && (SP_JSX.jsx(DownloadTab, { settings: settings, downloadProgress: downloadProgress, onDownloadStarted: () => { }, onInstalledRefresh: refreshInstalled })), activeTab === "installed" && (SP_JSX.jsx(InstalledTab, { packages: installedPackages, isLoading: isLoadingInstalled, onRefresh: refreshInstalled, onNavigateToDownload: () => setActiveTab("download") })), activeTab === "settings" && (SP_JSX.jsx(SettingsTab, { settings: settings, onSettingsSaved: (newSettings) => setSettings(newSettings) }))] }));
 }
 var index = definePlugin(() => {
     return {

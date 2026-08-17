@@ -4,10 +4,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+PNPM_CMD="pnpm"
+if ! command -v pnpm &>/dev/null; then
+    PNPM_CMD="npx -y pnpm"
+fi
+
 echo "==> Building ReleaseDeck frontend bundle..."
 cd "$ROOT_DIR"
-pnpm run type-check
-pnpm run build
+$PNPM_CMD run type-check
+$PNPM_CMD run build
 
 echo "==> Staging plugin files..."
 STAGING_DIR="$ROOT_DIR/build/ReleaseDeck"

@@ -1,6 +1,6 @@
 import {
-  PanelSection,
-  PanelSectionRow,
+  Focusable,
+  DialogButton,
 } from "@decky/ui";
 import {
   definePlugin,
@@ -15,10 +15,10 @@ import { DownloadTab } from "./components/DownloadTab";
 import { InstalledTab } from "./components/InstalledTab";
 import { SettingsTab } from "./components/SettingsTab";
 
-type TabKey = "download" | "installed" | "settings";
+type TabKey = "installed" | "download" | "settings";
 
 function ReleaseDeckContent() {
-  const [activeTab, setActiveTab] = useState<TabKey>("installed");
+  const [activeTab, setActiveTab] = useState<TabKey>("download");
   const [installedPackages, setInstalledPackages] = useState<InstalledPackage[]>([]);
   const [isLoadingInstalled, setIsLoadingInstalled] = useState<boolean>(false);
   const [settings, setSettings] = useState<PluginSettings | null>(null);
@@ -30,9 +30,8 @@ function ReleaseDeckContent() {
     try {
       const pkgs = await Api.getInstalledPackages();
       setInstalledPackages(pkgs);
-      // If we have no packages installed yet, default tab to download
-      if (pkgs.length === 0 && activeTab === "installed") {
-        setActiveTab("download");
+      if (pkgs.length > 0 && activeTab !== "settings") {
+        setActiveTab("installed");
       }
     } catch (e) {
       console.error("Failed to load packages:", e);
@@ -71,82 +70,66 @@ function ReleaseDeckContent() {
   }, []);
 
   return (
-    <div>
-      {/* Top Tab Bar Navigation */}
-      <PanelSection>
-        <PanelSectionRow>
-          <div
-            style={{
-              display: "flex",
-              gap: "4px",
-              width: "100%",
-              backgroundColor: "rgba(0,0,0,0.3)",
-              padding: "4px",
-              borderRadius: "6px",
-            }}
-          >
-            <button
-              onClick={() => setActiveTab("installed")}
-              style={{
-                flex: 1,
-                padding: "8px 4px",
-                border: "none",
-                borderRadius: "4px",
-                backgroundColor: activeTab === "installed" ? "#1a9fff" : "transparent",
-                color: "#ffffff",
-                fontSize: "12px",
-                fontWeight: activeTab === "installed" ? "bold" : "normal",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-              }}
-            >
-              <FaBox /> Installed {installedPackages.length > 0 && `(${installedPackages.length})`}
-            </button>
-
-            <button
-              onClick={() => setActiveTab("download")}
-              style={{
-                flex: 1,
-                padding: "8px 4px",
-                border: "none",
-                borderRadius: "4px",
-                backgroundColor: activeTab === "download" ? "#1a9fff" : "transparent",
-                color: "#ffffff",
-                fontSize: "12px",
-                fontWeight: activeTab === "download" ? "bold" : "normal",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-              }}
-            >
-              <FaDownload /> Download
-            </button>
-
-            <button
-              onClick={() => setActiveTab("settings")}
-              style={{
-                padding: "8px 12px",
-                border: "none",
-                borderRadius: "4px",
-                backgroundColor: activeTab === "settings" ? "#1a9fff" : "transparent",
-                color: "#ffffff",
-                fontSize: "12px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <FaCog />
-            </button>
+    <div style={{ padding: "0 4px" }}>
+      {/* Gamepad Focusable Top Tab Bar */}
+      <Focusable
+        flow-children="horizontal"
+        style={{
+          display: "flex",
+          gap: "6px",
+          width: "100%",
+          marginBottom: "12px",
+        }}
+      >
+        <DialogButton
+          onClick={() => setActiveTab("installed")}
+          style={{
+            flex: 1,
+            backgroundColor: activeTab === "installed" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
+            border: activeTab === "installed" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
+            padding: "8px 4px",
+            fontSize: "12px",
+            height: "auto",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <FaBox /> Installed {installedPackages.length > 0 ? `(${installedPackages.length})` : ""}
           </div>
-        </PanelSectionRow>
-      </PanelSection>
+        </DialogButton>
+
+        <DialogButton
+          onClick={() => setActiveTab("download")}
+          style={{
+            flex: 1,
+            backgroundColor: activeTab === "download" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
+            border: activeTab === "download" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
+            padding: "8px 4px",
+            fontSize: "12px",
+            height: "auto",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <FaDownload /> Download
+          </div>
+        </DialogButton>
+
+        <DialogButton
+          onClick={() => setActiveTab("settings")}
+          style={{
+            width: "42px",
+            minWidth: "42px",
+            backgroundColor: activeTab === "settings" ? "rgba(26, 159, 255, 0.45)" : "rgba(255, 255, 255, 0.05)",
+            border: activeTab === "settings" ? "1px solid #1a9fff" : "1px solid rgba(255, 255, 255, 0.1)",
+            padding: "8px",
+            height: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <FaCog />
+        </DialogButton>
+      </Focusable>
 
       {/* Tab Content */}
       {activeTab === "download" && (

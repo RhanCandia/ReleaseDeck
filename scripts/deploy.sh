@@ -20,6 +20,9 @@ REMOTE_PLUGIN_DIR="~/homebrew/plugins/ReleaseDeck"
 # Parse CLI arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --)
+      shift
+      ;;
     --deck-ip|-i)
       DECK_IP="$2"
       shift 2
@@ -63,10 +66,15 @@ if [ -z "$DECK_IP" ]; then
     fi
 fi
 
+PNPM_CMD="pnpm"
+if ! command -v pnpm &>/dev/null; then
+    PNPM_CMD="npx -y pnpm"
+fi
+
 echo -e "${CYAN}==> [1/4] Building ReleaseDeck bundle...${NC}"
 cd "$ROOT_DIR"
-pnpm run type-check
-pnpm run build
+$PNPM_CMD run type-check
+$PNPM_CMD run build
 
 echo -e "${CYAN}==> [2/4] Testing SSH connectivity to ${DECK_USER}@${DECK_IP}:${DECK_PORT}...${NC}"
 if ! ssh -p "$DECK_PORT" -o ConnectTimeout=5 -o BatchMode=no "${DECK_USER}@${DECK_IP}" "mkdir -p ${REMOTE_PLUGIN_DIR}"; then

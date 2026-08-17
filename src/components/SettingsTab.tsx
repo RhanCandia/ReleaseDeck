@@ -1,6 +1,7 @@
 import {
   ButtonItem,
   Field,
+  Focusable,
   PanelSection,
   PanelSectionRow,
   TextField,
@@ -100,10 +101,14 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
       {/* Favorite / Pinned Repositories */}
       <PanelSectionRow>
         <Field label="Favorite Repositories">
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "4px" }}>
+          <Focusable
+            flow-children="vertical"
+            style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", marginTop: "4px" }}
+          >
             {pinnedRepos.map((repo) => (
-              <div
+              <Focusable
                 key={repo}
+                flow-children="horizontal"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -121,7 +126,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                 >
                   <FaTrash />
                 </span>
-              </div>
+              </Focusable>
             ))}
 
             <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
@@ -138,7 +143,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                 </ButtonItem>
               </div>
             </div>
-          </div>
+          </Focusable>
         </Field>
       </PanelSectionRow>
 
@@ -159,7 +164,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
       {/* Version Footer */}
       <PanelSectionRow>
         <div style={{ textAlign: "center", fontSize: "11px", opacity: 0.5, padding: "8px" }}>
-          ReleaseDeck v0.1.0-alpha.2 • SteamOS Gaming Mode
+          ReleaseDeck v0.1.0-beta.2 • SteamOS Gaming Mode
         </div>
       </PanelSectionRow>
     </PanelSection>
