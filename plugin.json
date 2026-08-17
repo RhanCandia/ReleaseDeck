@@ -1,0 +1,11 @@
+{
+  "name": "ReleaseDeck",
+  "author": "ReleaseDeck Team",
+  "flags": ["debug", "_root"],
+  "api_version": 1,
+  "publish": {
+    "tags": ["github", "releases", "packages", "downloader", "manager", "tools"],
+    "description": "Download, manage, and update GitHub release packages directly in SteamOS Gaming Mode.",
+    "image": "https://raw.githubusercontent.com/ReleaseDeck/ReleaseDeck/main/assets/preview.png"
+  }
+}
