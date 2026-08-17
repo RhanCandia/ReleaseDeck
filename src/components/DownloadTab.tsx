@@ -8,7 +8,7 @@ import {
   Spinner,
 } from "@decky/ui";
 import { toaster } from "@decky/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaDownload, FaLinux, FaBan, FaCheckCircle, FaExclamationTriangle, FaCog, FaStar } from "react-icons/fa";
 import { Api } from "../api";
 import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings } from "../types";
@@ -30,14 +30,18 @@ export function DownloadTab({
   onNavigateToSettings,
 }: DownloadTabProps) {
   const pinnedRepos = settings?.pinned_repos || [];
+  const pinnedReposKey = pinnedRepos.join(",");
 
-  const [selectedRepo, setSelectedRepo] = useState<string>(pinnedRepos[0] || "");
+  const [selectedRepo, setSelectedRepo] = useState<string>(() => pinnedRepos[0] || "");
   const [isLoadingReleases, setIsLoadingReleases] = useState<boolean>(false);
   const [releases, setReleases] = useState<GitHubRelease[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<string>("");
   const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: "error" | "info" | "success"; text: string } | null>(null);
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
+
+  // Track if initial load happened to prevent resetting user selection on normal re-renders
+  const lastPinnedKeyRef = useRef<string>("");
 
   const fetchReleasesForRepo = async (repo: string) => {
     if (!repo) {
@@ -75,17 +79,20 @@ export function DownloadTab({
     }
   };
 
-  // Sync state when pinnedRepos changes
+  // Only run when the list of pinned repos is initially loaded or modified in Settings
   useEffect(() => {
-    if (pinnedRepos.length > 0) {
-      const repoToUse = pinnedRepos.includes(selectedRepo) ? selectedRepo : pinnedRepos[0];
-      setSelectedRepo(repoToUse);
-      fetchReleasesForRepo(repoToUse);
-    } else {
-      setSelectedRepo("");
-      setReleases([]);
+    if (pinnedReposKey !== lastPinnedKeyRef.current) {
+      lastPinnedKeyRef.current = pinnedReposKey;
+      if (pinnedRepos.length > 0) {
+        const repoToFetch = pinnedRepos.includes(selectedRepo) && selectedRepo ? selectedRepo : pinnedRepos[0];
+        setSelectedRepo(repoToFetch);
+        fetchReleasesForRepo(repoToFetch);
+      } else {
+        setSelectedRepo("");
+        setReleases([]);
+      }
     }
-  }, [pinnedRepos]);
+  }, [pinnedReposKey]);
 
   const handleRepoDropdownChange = (option: any) => {
     let chosen = "";
@@ -215,7 +222,7 @@ export function DownloadTab({
 
   return (
     <PanelSection title="Download">
-      {/* Favorite Repos Dropdown (String data mapping) */}
+      {/* Favorite Repos Dropdown */}
       <DropdownItem
         label="Repository"
         menuLabel="Select Favorite Repository"

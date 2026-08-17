@@ -156,13 +156,16 @@ function formatBytes(bytes, decimals = 1) {
 
 function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalledRefresh, onNavigateToSettings, }) {
     const pinnedRepos = settings?.pinned_repos || [];
-    const [selectedRepo, setSelectedRepo] = SP_REACT.useState(pinnedRepos[0] || "");
+    const pinnedReposKey = pinnedRepos.join(",");
+    const [selectedRepo, setSelectedRepo] = SP_REACT.useState(() => pinnedRepos[0] || "");
     const [isLoadingReleases, setIsLoadingReleases] = SP_REACT.useState(false);
     const [releases, setReleases] = SP_REACT.useState([]);
     const [selectedVersion, setSelectedVersion] = SP_REACT.useState("");
     const [selectedAssetId, setSelectedAssetId] = SP_REACT.useState(null);
     const [statusMessage, setStatusMessage] = SP_REACT.useState(null);
     const [showChangelog, setShowChangelog] = SP_REACT.useState(false);
+    // Track if initial load happened to prevent resetting user selection on normal re-renders
+    const lastPinnedKeyRef = SP_REACT.useRef("");
     const fetchReleasesForRepo = async (repo) => {
         if (!repo) {
             setReleases([]);
@@ -198,18 +201,21 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
             setIsLoadingReleases(false);
         }
     };
-    // Sync state when pinnedRepos changes
+    // Only run when the list of pinned repos is initially loaded or modified in Settings
     SP_REACT.useEffect(() => {
-        if (pinnedRepos.length > 0) {
-            const repoToUse = pinnedRepos.includes(selectedRepo) ? selectedRepo : pinnedRepos[0];
-            setSelectedRepo(repoToUse);
-            fetchReleasesForRepo(repoToUse);
+        if (pinnedReposKey !== lastPinnedKeyRef.current) {
+            lastPinnedKeyRef.current = pinnedReposKey;
+            if (pinnedRepos.length > 0) {
+                const repoToFetch = pinnedRepos.includes(selectedRepo) && selectedRepo ? selectedRepo : pinnedRepos[0];
+                setSelectedRepo(repoToFetch);
+                fetchReleasesForRepo(repoToFetch);
+            }
+            else {
+                setSelectedRepo("");
+                setReleases([]);
+            }
         }
-        else {
-            setSelectedRepo("");
-            setReleases([]);
-        }
-    }, [pinnedRepos]);
+    }, [pinnedReposKey]);
     const handleRepoDropdownChange = (option) => {
         let chosen = "";
         if (typeof option === "string") {
