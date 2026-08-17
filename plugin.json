@@ -1,11 +1,11 @@
 {
   "name": "Release Deck",
-  "author": "ReleaseDeck Team",
-  "flags": ["debug", "_root"],
+  "author": "RhanCandia",
+  "flags": ["_root"],
   "api_version": 1,
   "publish": {
-    "tags": ["github", "releases", "packages", "downloader", "manager", "tools"],
-    "description": "Download, manage, and update GitHub release packages directly in SteamOS Gaming Mode.",
-    "image": "https://raw.githubusercontent.com/ReleaseDeck/ReleaseDeck/main/assets/preview.png"
+    "tags": ["github", "releases", "packages", "downloader", "manager", "tools", "games"],
+    "description": "Download, manage, and update GitHub release packages and game ports directly in SteamOS Gaming Mode.",
+    "image": "https://raw.githubusercontent.com/RhanCandia/ReleaseDeck/main/assets/preview.png"
   }
 }
