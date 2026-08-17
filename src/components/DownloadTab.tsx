@@ -10,7 +10,7 @@ import {
 } from "@decky/ui";
 import { toaster } from "@decky/api";
 import { useState } from "react";
-import { FaDownload, FaLinux, FaBan, FaGithub, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import { FaDownload, FaLinux, FaBan, FaGithub, FaCheckCircle, FaExclamationTriangle, FaStar } from "react-icons/fa";
 import { Api } from "../api";
 import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings } from "../types";
 import { formatBytes } from "../utils/format";
@@ -145,22 +145,49 @@ export function DownloadTab({
 
   return (
     <PanelSection title="Download">
-      {/* Pinned Repos DropdownItem */}
+      {/* Pinned Repos Quick Select Buttons (Fast, 1-Click Gamepad Selection) */}
       {pinnedRepos.length > 0 && (
-        <DropdownItem
-          label="Favorite Repos"
-          menuLabel="Select Favorite Repository"
-          strDefaultLabel="Select a repository..."
-          rgOptions={pinnedRepos.map((r) => ({ data: r, label: r }))}
-          selectedOption={pinnedRepos.includes(repoInput) ? repoInput : undefined}
-          onChange={(item: any) => {
-            const chosen = item?.data !== undefined ? item.data : item;
-            if (typeof chosen === "string" && chosen) {
-              setRepoInput(chosen);
-              handleFetchReleases(chosen);
-            }
-          }}
-        />
+        <PanelSectionRow>
+          <div style={{ width: "100%", boxSizing: "border-box" }}>
+            <div style={{ fontSize: "11px", opacity: 0.8, marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <FaStar color="#ffd43b" /> Favorite Repositories:
+            </div>
+            <Focusable
+              flow-children="vertical"
+              style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }}
+            >
+              {pinnedRepos.map((repo) => {
+                const isSelected = repoInput.trim() === repo;
+                return (
+                  <ButtonItem
+                    key={repo}
+                    layout="below"
+                    onClick={() => {
+                      setRepoInput(repo);
+                      handleFetchReleases(repo);
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "11px",
+                        wordBreak: "break-all",
+                        color: isSelected ? "#1a9fff" : undefined,
+                        fontWeight: isSelected ? "bold" : "normal",
+                        width: "100%",
+                      }}
+                    >
+                      <span>{repo}</span>
+                      {isSelected ? <span>● Active</span> : <span>Fetch ➔</span>}
+                    </div>
+                  </ButtonItem>
+                );
+              })}
+            </Focusable>
+          </div>
+        </PanelSectionRow>
       )}
 
       {/* Manual Repo Input */}
