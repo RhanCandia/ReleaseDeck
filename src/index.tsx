@@ -225,6 +225,7 @@ function ReleaseDeckContent() {
 
         /* Card 3-Action Buttons (Launch, Update, Delete) */
         .rd-card-btn {
+          min-width: unset !important;
           background-color: rgba(255, 255, 255, 0.08) !important;
           border: 1px solid rgba(255, 255, 255, 0.15) !important;
           color: #dbe4ef !important;
@@ -255,6 +256,36 @@ function ReleaseDeckContent() {
           background-color: rgba(255, 75, 75, 0.35) !important;
           border-color: #ff4b4b !important;
           color: #ff8787 !important;
+        }
+
+        /* Compact Delete Pill inside Lists */
+        .rd-delete-pill {
+          min-width: 0 !important;
+          width: auto !important;
+          max-width: fit-content !important;
+          height: 24px !important;
+          min-height: 24px !important;
+          padding: 0 8px !important;
+          font-size: 10px !important;
+          flex: 0 0 auto !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          margin: 0 !important;
+          box-sizing: border-box !important;
+        }
+
+        .rd-card-row {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          background: rgba(255, 255, 255, 0.05) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 6px !important;
+          padding: 6px 10px !important;
+          gap: 8px !important;
         }
         .rd-card-btn:focus,
         .rd-card-btn:focus-visible,
