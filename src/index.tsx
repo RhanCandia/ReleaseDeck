@@ -18,7 +18,7 @@ import { SettingsTab } from "./components/SettingsTab";
 type TabKey = "apps" | "download" | "settings";
 
 function ReleaseDeckContent() {
-  const [activeTab, setActiveTab] = useState<TabKey>("download");
+  const [activeTab, setActiveTab] = useState<TabKey>("apps");
   const [installedPackages, setInstalledPackages] = useState<InstalledPackage[]>([]);
   const [isLoadingInstalled, setIsLoadingInstalled] = useState<boolean>(false);
   const [settings, setSettings] = useState<PluginSettings | null>(null);
@@ -29,9 +29,6 @@ function ReleaseDeckContent() {
     try {
       const pkgs = await Api.getInstalledPackages();
       setInstalledPackages(pkgs);
-      if (pkgs.length > 0 && activeTab !== "settings") {
-        setActiveTab("apps");
-      }
     } catch (e) {
       console.error("Failed to load packages:", e);
     } finally {
@@ -49,15 +46,28 @@ function ReleaseDeckContent() {
   };
 
   useEffect(() => {
-    refreshInstalled();
+    // Initial mount: load packages and pick appropriate default tab
+    (async () => {
+      try {
+        const pkgs = await Api.getInstalledPackages();
+        setInstalledPackages(pkgs);
+        if (pkgs.length === 0) {
+          setActiveTab("download");
+        }
+      } catch (e) {
+        console.error("Failed to load initial packages:", e);
+      }
+    })();
     loadSettings();
 
     const progressListener = addEventListener<[progress: DownloadProgress]>(
       "download_progress",
       (progress) => {
-        setDownloadProgress(progress);
-        if (progress.status === "complete") {
-          refreshInstalled();
+        if (progress) {
+          setDownloadProgress(progress);
+          if (progress.status === "complete") {
+            refreshInstalled();
+          }
         }
       }
     );
@@ -66,6 +76,28 @@ function ReleaseDeckContent() {
       removeEventListener("download_progress", progressListener);
     };
   }, []);
+
+  // Continuous polling while download/extraction is active
+  useEffect(() => {
+    const isOngoing = downloadProgress && (downloadProgress.status === "downloading" || downloadProgress.status === "extracting");
+    if (!isOngoing) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const status = await Api.getDownloadStatus();
+        if (status) {
+          setDownloadProgress(status);
+          if (status.status === "complete") {
+            refreshInstalled();
+          }
+        }
+      } catch (e) {
+        // ignore poll errors
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [downloadProgress?.status]);
 
   return (
     <div style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
@@ -208,6 +240,12 @@ function ReleaseDeckContent() {
           border-color: rgba(46, 204, 113, 0.3) !important;
           color: #a3e9c0 !important;
         }
+        .rd-card-btn-installed {
+          background-color: rgba(46, 204, 113, 0.12) !important;
+          border-color: rgba(46, 204, 113, 0.3) !important;
+          color: #a3e9c0 !important;
+          opacity: 0.9;
+        }
         .rd-card-btn-update.rd-update-available {
           background-color: rgba(245, 159, 0, 0.25) !important;
           border-color: #f59f00 !important;
@@ -234,6 +272,122 @@ function ReleaseDeckContent() {
         .rd-card-btn:focus-within *,
         .rd-card-btn.gpfocus *,
         .rd-card-btn:hover * {
+          color: #ffffff !important;
+          fill: #ffffff !important;
+        }
+
+        /* Download Tab Breadcrumb Stepper */
+        .rd-breadcrumb-bar {
+          display: flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          background: rgba(0, 0, 0, 0.4) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          border-radius: 6px !important;
+          padding: 6px 10px !important;
+          font-size: 11px !important;
+          cursor: pointer !important;
+          transition: background-color 0.15s ease, border-color 0.15s ease !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        .rd-breadcrumb-bar:hover {
+          background: rgba(255, 255, 255, 0.08) !important;
+        }
+        .rd-breadcrumb-bar:focus,
+        .rd-breadcrumb-bar:focus-visible,
+        .rd-breadcrumb-bar:focus-within,
+        .rd-breadcrumb-bar.gpfocus {
+          background: #1a9fff !important;
+          border-color: #ffffff !important;
+          box-shadow: 0 0 0 2px #ffffff, 0 0 8px rgba(26, 159, 255, 0.8) !important;
+          color: #ffffff !important;
+          outline: none !important;
+        }
+        .rd-breadcrumb-bar:focus *,
+        .rd-breadcrumb-bar:focus-visible *,
+        .rd-breadcrumb-bar:focus-within *,
+        .rd-breadcrumb-bar.gpfocus * {
+          color: #ffffff !important;
+          fill: #ffffff !important;
+        }
+
+        /* Generic Interactive Card Item (Repos, Versions) */
+        .rd-card-item {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 6px !important;
+          padding: 8px 10px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          gap: 8px !important;
+          cursor: pointer !important;
+          transition: all 0.15s ease-in-out !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          outline: none !important;
+        }
+        .rd-card-item:hover {
+          background: rgba(255, 255, 255, 0.1) !important;
+          border-color: rgba(255, 255, 255, 0.25) !important;
+        }
+        .rd-card-item:focus,
+        .rd-card-item:focus-visible,
+        .rd-card-item:focus-within,
+        .rd-card-item.gpfocus {
+          background: #1a9fff !important;
+          border-color: #ffffff !important;
+          box-shadow: 0 0 0 2px #ffffff, 0 0 10px rgba(26, 159, 255, 0.8) !important;
+          color: #ffffff !important;
+          transform: translateY(-1px);
+          outline: none !important;
+        }
+        .rd-card-item:focus *,
+        .rd-card-item:focus-visible *,
+        .rd-card-item:focus-within *,
+        .rd-card-item.gpfocus * {
+          color: #ffffff !important;
+          fill: #ffffff !important;
+        }
+
+        /* Asset Package Selection Card */
+        .rd-asset-card {
+          background: rgba(255, 255, 255, 0.05) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 6px !important;
+          padding: 8px 10px !important;
+          display: flex !important;
+          align-items: flex-start !important;
+          gap: 8px !important;
+          cursor: pointer !important;
+          transition: all 0.15s ease-in-out !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          outline: none !important;
+        }
+        .rd-asset-card.selected {
+          background: rgba(26, 159, 255, 0.18) !important;
+          border-color: #1a9fff !important;
+        }
+        .rd-asset-card:hover {
+          background: rgba(255, 255, 255, 0.1) !important;
+        }
+        .rd-asset-card:focus,
+        .rd-asset-card:focus-visible,
+        .rd-asset-card:focus-within,
+        .rd-asset-card.gpfocus {
+          background: #1a9fff !important;
+          border-color: #ffffff !important;
+          box-shadow: 0 0 0 2px #ffffff, 0 0 10px rgba(26, 159, 255, 0.8) !important;
+          color: #ffffff !important;
+          transform: translateY(-1px);
+          outline: none !important;
+        }
+        .rd-asset-card:focus *,
+        .rd-asset-card:focus-visible *,
+        .rd-asset-card:focus-within *,
+        .rd-asset-card.gpfocus * {
           color: #ffffff !important;
           fill: #ffffff !important;
         }
@@ -283,9 +437,11 @@ function ReleaseDeckContent() {
         <DownloadTab
           settings={settings}
           downloadProgress={downloadProgress}
+          installedPackages={installedPackages}
           onDownloadStarted={() => {}}
           onInstalledRefresh={refreshInstalled}
           onNavigateToSettings={() => setActiveTab("settings")}
+          onNavigateToApps={() => setActiveTab("apps")}
         />
       )}
 

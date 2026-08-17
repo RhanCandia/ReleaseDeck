@@ -21,9 +21,12 @@ class Plugin:
         self.package_db: Optional[PackageDB] = None
         self.is_downloading = False
         self.current_download_task: Optional[asyncio.Task] = None
+        self.current_download_status: Optional[Dict[str, Any]] = None
         self.loop: Optional[asyncio.AbstractEventLoop] = None
 
     async def _emit_event(self, event_name: str, data: Any):
+        if event_name == "download_progress":
+            self.current_download_status = data
         try:
             res = decky.emit(event_name, data)
             if asyncio.iscoroutine(res):
@@ -32,15 +35,20 @@ class Plugin:
             decky.logger.debug(f"Failed to emit {event_name}: {e}")
 
     def _sync_emit_event(self, event_name: str, data: Any):
+        if event_name == "download_progress":
+            self.current_download_status = data
         try:
             if self.loop and self.loop.is_running():
-                self.loop.create_task(self._emit_event(event_name, data))
+                asyncio.run_coroutine_threadsafe(self._emit_event(event_name, data), self.loop)
             else:
                 res = decky.emit(event_name, data)
                 if asyncio.iscoroutine(res):
-                    asyncio.create_task(res)
-        except Exception:
-            pass
+                    if self.loop and self.loop.is_running():
+                        asyncio.run_coroutine_threadsafe(res, self.loop)
+                    else:
+                        asyncio.create_task(res)
+        except Exception as e:
+            decky.logger.error(f"Error in sync emit: {e}")
 
     async def _main(self):
         """Executed on Decky plugin startup."""
@@ -94,6 +102,18 @@ class Plugin:
             return {"success": False, "error": "A download is already in progress."}
 
         self.is_downloading = True
+        init_progress = {
+            "repo": repo,
+            "name": name,
+            "percent": 0.0,
+            "speed_mb_s": 0.0,
+            "downloaded": 0,
+            "total": 0,
+            "status": "downloading"
+        }
+        self.current_download_status = init_progress
+        self._sync_emit_event("download_progress", init_progress)
+
         temp_dir = tempfile.mkdtemp(prefix="releasedeck_")
         download_file_path = os.path.join(temp_dir, asset_name)
 
@@ -159,12 +179,15 @@ class Plugin:
 
         except DownloadCancelledError:
             decky.logger.info(f"Download cancelled for {repo}")
+            self.current_download_status = None
             return {"success": False, "error": "Download was cancelled."}
         except ExtractionError as e:
             decky.logger.error(f"Extraction error: {e}")
+            self.current_download_status = None
             return {"success": False, "error": f"Extraction failed: {str(e)}"}
         except Exception as e:
             decky.logger.error(f"Download/install failed: {e}")
+            self.current_download_status = None
             return {"success": False, "error": str(e)}
         finally:
             self.is_downloading = False
@@ -173,10 +196,15 @@ class Plugin:
                 import shutil
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
+    async def get_download_status(self) -> Optional[Dict[str, Any]]:
+        """Retrieve current live download status and metrics."""
+        return self.current_download_status
+
     async def cancel_download(self) -> Dict[str, Any]:
         """Cancel current ongoing download."""
         if self.is_downloading:
             self.downloader.cancel()
+            self.current_download_status = None
             return {"success": True}
         return {"success": False, "error": "No download in progress."}
 

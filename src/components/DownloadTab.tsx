@@ -1,10 +1,10 @@
 import {
   ButtonItem,
+  DialogButton,
   Focusable,
   PanelSection,
   PanelSectionRow,
   ProgressBar,
-  Spinner,
 } from "@decky/ui";
 import { toaster } from "@decky/api";
 import { useState, useEffect } from "react";
@@ -22,17 +22,25 @@ import {
   FaDotCircle,
   FaRegCircle,
   FaRedo,
+  FaGithub,
+  FaChevronRight,
+  FaInfoCircle,
+  FaCheckCircle,
+  FaCheck,
+  FaBox,
 } from "react-icons/fa";
 import { Api } from "../api";
-import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings } from "../types";
+import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings, InstalledPackage } from "../types";
 import { formatBytes } from "../utils/format";
 
 interface DownloadTabProps {
   settings: PluginSettings | null;
   downloadProgress: DownloadProgress | null;
+  installedPackages: InstalledPackage[];
   onDownloadStarted: () => void;
   onInstalledRefresh: () => void;
   onNavigateToSettings: () => void;
+  onNavigateToApps: () => void;
 }
 
 type DrillStep =
@@ -43,9 +51,11 @@ type DrillStep =
 export function DownloadTab({
   settings,
   downloadProgress,
+  installedPackages,
   onDownloadStarted,
   onInstalledRefresh,
   onNavigateToSettings,
+  onNavigateToApps,
 }: DownloadTabProps) {
   const pinnedRepos = settings?.pinned_repos || [];
 
@@ -59,9 +69,20 @@ export function DownloadTab({
 
   // Selected & focused state
   const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
-  const [focusedVersionId, setFocusedVersionId] = useState<number | null>(null);
-  const [focusedAssetId, setFocusedAssetId] = useState<number | null>(null);
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
+  const [isInitiatingDownload, setIsInitiatingDownload] = useState<boolean>(false);
+  const [lastInstalledName, setLastInstalledName] = useState<string | null>(null);
+
+  // Helper to extract file extension
+  const getFileBadge = (filename: string) => {
+    const lower = filename.toLowerCase();
+    if (lower.endsWith(".appimage")) return "AppImage";
+    if (lower.endsWith(".tar.gz") || lower.endsWith(".tgz")) return "tar.gz";
+    if (lower.endsWith(".tar.xz")) return "tar.xz";
+    if (lower.endsWith(".zip")) return "zip";
+    if (lower.endsWith(".bin") || lower.endsWith(".sh")) return "bin";
+    return "file";
+  };
 
   // Fetch releases on demand when entering a repository
   const loadRepoVersions = async (repo: string, force = false) => {
@@ -104,6 +125,8 @@ export function DownloadTab({
 
   const handleStartDownload = async (repo: string, release: GitHubRelease, asset: GitHubAsset) => {
     const displayName = release.name || repo.split("/")[1] || repo;
+    setIsInitiatingDownload(true);
+    setLastInstalledName(null);
 
     onDownloadStarted();
     toaster.toast({
@@ -121,6 +144,7 @@ export function DownloadTab({
       });
 
       if (res.success) {
+        setLastInstalledName(displayName);
         toaster.toast({
           title: "ReleaseDeck",
           body: `Successfully installed ${displayName}!`,
@@ -138,11 +162,14 @@ export function DownloadTab({
         title: "Download Error",
         body: e?.message || "Unexpected download error.",
       });
+    } finally {
+      setIsInitiatingDownload(false);
     }
   };
 
   const handleCancelDownload = async () => {
     await Api.cancelDownload();
+    setIsInitiatingDownload(false);
     toaster.toast({
       title: "ReleaseDeck",
       body: "Download cancelled.",
@@ -150,9 +177,10 @@ export function DownloadTab({
   };
 
   const isDownloading =
-    downloadProgress &&
-    downloadProgress.status !== "complete" &&
-    downloadProgress.status !== "error";
+    isInitiatingDownload ||
+    (downloadProgress &&
+      downloadProgress.status !== "complete" &&
+      downloadProgress.status !== "error");
 
   // Reset to repos list if current repo is deleted from Settings
   useEffect(() => {
@@ -171,20 +199,25 @@ export function DownloadTab({
           <PanelSectionRow>
             <div
               style={{
-                padding: "16px 8px",
+                padding: "20px 12px",
                 textAlign: "center",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: "8px",
+                gap: "10px",
                 width: "100%",
                 boxSizing: "border-box",
+                backgroundColor: "rgba(255, 255, 255, 0.03)",
+                borderRadius: "8px",
+                border: "1px dashed rgba(255, 255, 255, 0.15)",
               }}
             >
-              <FaStar size={26} color="#ffd43b" />
-              <div style={{ fontSize: "13px", fontWeight: "bold" }}>No Repositories Added Yet</div>
-              <div style={{ fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }}>
-                Add GitHub repositories in Settings to browse and download releases.
+              <FaStar size={28} color="#ffd43b" />
+              <div style={{ fontSize: "13px", fontWeight: "bold", color: "#ffffff" }}>
+                No Repositories Added
+              </div>
+              <div style={{ fontSize: "11px", color: "#9aa4af", lineHeight: "1.4", maxWidth: "260px" }}>
+                Add GitHub repositories in Settings to browse, download, and install game ports.
               </div>
               <div style={{ marginTop: "6px", width: "100%" }}>
                 <ButtonItem layout="below" onClick={onNavigateToSettings}>
@@ -201,39 +234,101 @@ export function DownloadTab({
 
     return (
       <PanelSection title="Repositories">
-        <PanelSectionRow>
-          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
-            <div style={{ fontSize: "11px", opacity: 0.7, marginBottom: "2px" }}>
-              Select a repository to view releases:
+        {/* Active Download Banner if running in background */}
+        {isDownloading && (
+          <PanelSectionRow>
+            <div
+              style={{
+                padding: "8px 10px",
+                width: "100%",
+                boxSizing: "border-box",
+                backgroundColor: "rgba(26, 159, 255, 0.15)",
+                borderRadius: "6px",
+                border: "1px solid #1a9fff",
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                marginBottom: "4px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: "bold", color: "#ffffff" }}>
+                <span>{downloadProgress?.status === "extracting" ? "📦 Extracting..." : `📥 Downloading ${downloadProgress?.name || ""}...`}</span>
+                <span>{downloadProgress?.percent || 0}%</span>
+              </div>
+              <ProgressBar nProgress={downloadProgress?.percent || 0} />
             </div>
+          </PanelSectionRow>
+        )}
+
+        <PanelSectionRow>
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div style={{ fontSize: "11px", color: "#9aa4af", marginBottom: "2px" }}>
+              Select a repository to explore releases:
+            </div>
+
             <Focusable
               flow-children="vertical"
-              style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }}
+              style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", boxSizing: "border-box" }}
             >
-              {pinnedRepos.map((repo) => (
-                <ButtonItem
-                  key={repo}
-                  layout="below"
-                  onClick={() => loadRepoVersions(repo)}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      fontSize: "12px",
-                      gap: "8px",
-                    }}
+              {pinnedRepos.map((repo) => {
+                const parts = repo.split("/");
+                const owner = parts.length > 1 ? parts[0] : "";
+                const repoName = parts.length > 1 ? parts[1] : repo;
+                const cachedCount = releasesCache[repo]?.length;
+
+                return (
+                  <Focusable
+                    key={repo}
+                    onActivate={() => loadRepoVersions(repo)}
+                    onClick={() => loadRepoVersions(repo)}
+                    className="rd-card-item"
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", wordBreak: "break-all", textAlign: "left" }}>
-                      <FaFolder style={{ flexShrink: 0, color: "#74c0fc" }} />
-                      <span>{repo}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "6px",
+                          backgroundColor: "rgba(26, 159, 255, 0.15)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <FaGithub size={14} color="#74c0fc" />
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, textAlign: "left" }}>
+                        <div style={{ fontWeight: "bold", fontSize: "12px", color: "#ffffff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {repoName}
+                        </div>
+                        {owner && (
+                          <div style={{ fontSize: "10px", color: "#9aa4af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {owner}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: "11px", opacity: 0.6, flexShrink: 0 }}>➔</span>
-                  </div>
-                </ButtonItem>
-              ))}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                      {cachedCount ? (
+                        <span
+                          style={{
+                            fontSize: "9px",
+                            backgroundColor: "rgba(255, 255, 255, 0.1)",
+                            color: "#cbd5e1",
+                            padding: "2px 5px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          {cachedCount} revs
+                        </span>
+                      ) : null}
+                      <FaChevronRight size={10} color="#74c0fc" />
+                    </div>
+                  </Focusable>
+                );
+              })}
             </Focusable>
           </div>
         </PanelSectionRow>
@@ -242,7 +337,7 @@ export function DownloadTab({
   }
 
   // ==========================================
-  // VIEW 2: VERSIONS LIST (WITH RETRY BUTTON)
+  // VIEW 2: VERSIONS LIST
   // ==========================================
   if (currentStep.type === "versions") {
     const { repo } = currentStep;
@@ -250,38 +345,32 @@ export function DownloadTab({
 
     return (
       <PanelSection title="Versions">
-        {/* Back Button & Title */}
+        {/* Navigation Breadcrumb & Back Action */}
         <PanelSectionRow>
-          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
-            <ButtonItem
-              layout="below"
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "6px" }}>
+            <Focusable
+              onActivate={() => setCurrentStep({ type: "repos" })}
               onClick={() => setCurrentStep({ type: "repos" })}
+              className="rd-breadcrumb-bar"
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}>
-                <FaArrowLeft /> Back to Repositories
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#74c0fc" }}>
+                <FaArrowLeft size={10} />
+                <span style={{ fontWeight: "bold" }}>Repositories</span>
               </div>
-            </ButtonItem>
-            <div
-              style={{
-                padding: "4px 6px",
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                borderRadius: "3px",
-                fontSize: "11px",
-                fontWeight: "bold",
-                wordBreak: "break-all",
-              }}
-            >
-              📁 {repo}
-            </div>
+              <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+              <span style={{ color: "#ffffff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                {repo}
+              </span>
+            </Focusable>
           </div>
         </PanelSectionRow>
 
         {/* Loading Spinner */}
         {isLoadingReleases && (
           <PanelSectionRow>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", gap: "6px", fontSize: "11px" }}>
-              <Spinner />
-              <span>Fetching versions...</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 10px", gap: "8px", width: "100%" }}>
+              <FaGithub className="spin-icon" size={24} style={{ color: "#74c0fc" }} />
+              <span style={{ fontSize: "11px", color: "#9aa4af" }}>Fetching releases from GitHub...</span>
             </div>
           </PanelSectionRow>
         )}
@@ -291,14 +380,15 @@ export function DownloadTab({
           <PanelSectionRow>
             <div
               style={{
-                padding: "8px",
-                borderRadius: "4px",
+                padding: "10px",
+                borderRadius: "6px",
                 backgroundColor: "rgba(220, 53, 69, 0.2)",
+                border: "1px solid rgba(220, 53, 69, 0.4)",
                 color: "#ff6b6b",
                 fontSize: "11px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "6px",
+                gap: "8px",
                 wordBreak: "break-word",
                 width: "100%",
                 boxSizing: "border-box",
@@ -313,59 +403,48 @@ export function DownloadTab({
                 onClick={() => loadRepoVersions(repo, true)}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
-                  <FaRedo /> Retry Fetching Versions
+                  <FaRedo /> Retry Fetching Releases
                 </div>
               </ButtonItem>
             </div>
           </PanelSectionRow>
         )}
 
-        {/* Sleek Text Links with onFocus Highlight */}
+        {/* Version List Cards */}
         {!isLoadingReleases && releases.length > 0 && (
           <PanelSectionRow>
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "2px" }}>
-              <div style={{ fontSize: "10px", opacity: 0.65, marginBottom: "2px" }}>Select a Version:</div>
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "11px", color: "#9aa4af", marginBottom: "2px" }}>
+                Choose a release tag:
+              </div>
+
               <Focusable
                 flow-children="vertical"
-                style={{ display: "flex", flexDirection: "column", gap: "2px", width: "100%", boxSizing: "border-box" }}
+                style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }}
               >
                 {releases.map((rel, index) => {
-                  const isFocused = focusedVersionId === rel.id;
+                  const isLatest = index === 0 && !rel.prerelease;
+
                   return (
                     <Focusable
                       key={rel.id}
-                      onFocus={() => setFocusedVersionId(rel.id)}
-                      onBlur={() => setFocusedVersionId((current) => (current === rel.id ? null : current))}
                       onActivate={() => handleSelectRelease(repo, rel)}
                       onClick={() => handleSelectRelease(repo, rel)}
-                      style={{
-                        padding: "5px 8px",
-                        borderRadius: "4px",
-                        backgroundColor: isFocused ? "#1a9fff" : "transparent",
-                        border: isFocused ? "1px solid #ffffff" : "1px solid transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        cursor: "pointer",
-                        width: "100%",
-                        boxSizing: "border-box",
-                        transition: "background-color 0.15s ease",
-                      }}
+                      className="rd-card-item"
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1, textAlign: "left" }}>
                         <FaTag
+                          size={11}
                           style={{
                             flexShrink: 0,
-                            fontSize: "10px",
-                            color: isFocused ? "#ffffff" : index === 0 ? "#51cf66" : "#74c0fc",
+                            color: isLatest ? "#51cf66" : "#74c0fc",
                           }}
                         />
                         <span
                           style={{
-                            fontSize: "11px",
-                            fontWeight: isFocused || index === 0 ? "bold" : "normal",
-                            color: isFocused ? "#ffffff" : "#74c0fc",
-                            textDecoration: isFocused ? "none" : "underline",
+                            fontSize: "12px",
+                            fontWeight: isLatest ? "bold" : "500",
+                            color: "#ffffff",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -373,45 +452,51 @@ export function DownloadTab({
                         >
                           {rel.tag_name}
                         </span>
-                        {index === 0 && (
+
+                        {isLatest && (
                           <span
                             style={{
                               fontSize: "8px",
-                              backgroundColor: isFocused ? "rgba(0, 0, 0, 0.3)" : "#2b8a3e",
-                              color: "#fff",
-                              padding: "0 4px",
-                              borderRadius: "2px",
+                              backgroundColor: "#2b8a3e",
+                              color: "#ffffff",
+                              padding: "1px 5px",
+                              borderRadius: "3px",
+                              fontWeight: "bold",
                               flexShrink: 0,
                             }}
                           >
                             Latest
                           </span>
                         )}
+
                         {rel.prerelease && (
                           <span
                             style={{
                               fontSize: "8px",
-                              backgroundColor: isFocused ? "rgba(0, 0, 0, 0.3)" : "#e67700",
-                              color: "#fff",
-                              padding: "0 4px",
-                              borderRadius: "2px",
+                              backgroundColor: "#e67700",
+                              color: "#ffffff",
+                              padding: "1px 5px",
+                              borderRadius: "3px",
+                              fontWeight: "bold",
                               flexShrink: 0,
                             }}
                           >
-                            Pre
+                            Pre-release
                           </span>
                         )}
                       </div>
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          opacity: isFocused ? 0.95 : 0.6,
-                          color: isFocused ? "#ffffff" : undefined,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {rel.assets.length} file{rel.assets.length === 1 ? "" : "s"} ➔
-                      </span>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#9aa4af",
+                          }}
+                        >
+                          {rel.assets.length} file{rel.assets.length === 1 ? "" : "s"}
+                        </span>
+                        <FaChevronRight size={10} color="#74c0fc" />
+                      </div>
                     </Focusable>
                   );
                 })}
@@ -424,102 +509,157 @@ export function DownloadTab({
   }
 
   // ==========================================
-  // VIEW 3: PACKAGES LIST (SLEEK RADIO ROWS WITH CRISP FOCUS)
+  // VIEW 3: PACKAGES SELECTION & DOWNLOAD
   // ==========================================
   const { repo, release } = currentStep;
   const selectedAsset = release.assets.find((a) => a.id === selectedAssetId) || release.assets[0];
 
   return (
-    <PanelSection title="Packages">
-      {/* Back Button & Title */}
+    <PanelSection title="Download Package">
+      {/* Navigation Breadcrumbs */}
       <PanelSectionRow>
-        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
-          <ButtonItem
-            layout="below"
+        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "6px" }}>
+          <Focusable
+            onActivate={() => setCurrentStep({ type: "versions", repo })}
             onClick={() => setCurrentStep({ type: "versions", repo })}
+            className="rd-breadcrumb-bar"
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}>
-              <FaArrowLeft /> Back to Versions
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#74c0fc" }}>
+              <FaArrowLeft size={10} />
+              <span style={{ fontWeight: "bold" }}>Versions</span>
             </div>
-          </ButtonItem>
-          <div
-            style={{
-              padding: "4px 6px",
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              borderRadius: "3px",
-              fontSize: "11px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            <span style={{ fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {repo}
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+            <span style={{ color: "#ffffff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {release.tag_name}
             </span>
-            <span style={{ opacity: 0.8, fontSize: "10px" }}>{release.tag_name}</span>
-          </div>
+          </Focusable>
         </div>
       </PanelSectionRow>
 
-      {/* Active Download Progress */}
-      {isDownloading && (
+      {/* Success Notification Banner */}
+      {lastInstalledName && !isDownloading && (
         <PanelSectionRow>
           <div
             style={{
-              padding: "8px",
-              boxSizing: "border-box",
-              width: "100%",
-              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              padding: "10px 12px",
+              backgroundColor: "rgba(46, 204, 113, 0.15)",
+              border: "1px solid rgba(46, 204, 113, 0.4)",
               borderRadius: "6px",
-              border: "1px solid #1a9fff",
               display: "flex",
-              flexDirection: "column",
-              gap: "4px",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+              width: "100%",
+              boxSizing: "border-box",
+              marginBottom: "6px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: "bold" }}>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: "6px" }}>
-                {downloadProgress?.status === "extracting" ? "📦 Extracting..." : "📥 Downloading..."}
-              </span>
-              <span>{downloadProgress?.percent || 0}%</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#a3e9c0", fontWeight: "bold" }}>
+              <FaCheckCircle color="#2ecc71" size={14} />
+              <span>{lastInstalledName} installed!</span>
             </div>
-            <ProgressBar nProgress={downloadProgress?.percent || 0} />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", opacity: 0.8 }}>
-              <span>{downloadProgress?.speed_mb_s || 0} MB/s</span>
-              <span>{formatBytes(downloadProgress?.downloaded || 0)} / {formatBytes(downloadProgress?.total || 0)}</span>
-            </div>
-            <ButtonItem layout="below" onClick={handleCancelDownload}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", fontSize: "10px" }}>
-                <FaBan /> Cancel
-              </div>
-            </ButtonItem>
+            <DialogButton
+              className="rd-card-btn rd-card-btn-launch"
+              onClick={() => onInstalledRefresh()}
+              style={{ padding: "4px 8px", fontSize: "10px", height: "auto" }}
+            >
+              <span>View in Apps ➔</span>
+            </DialogButton>
           </div>
         </PanelSectionRow>
       )}
 
-      {/* Changelog Toggle */}
+      {/* Active Live Download Progress Card */}
+      {isDownloading && (
+        <PanelSectionRow>
+          <div
+            style={{
+              padding: "12px",
+              boxSizing: "border-box",
+              width: "100%",
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              borderRadius: "8px",
+              border: "1px solid #1a9fff",
+              boxShadow: "0 0 14px rgba(26, 159, 255, 0.35)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              marginBottom: "8px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: "bold", color: "#ffffff" }}>
+                <FaDownload className="spin-icon" style={{ color: "#74c0fc" }} />
+                <span>
+                  {downloadProgress?.status === "extracting"
+                    ? "📦 Extracting & Setting Permissions..."
+                    : `📥 Downloading ${downloadProgress?.name || release?.name || ""}`}
+                </span>
+              </div>
+              <span style={{ fontSize: "13px", fontWeight: "bold", color: "#74c0fc" }}>
+                {downloadProgress?.percent != null && downloadProgress.percent > 0
+                  ? `${downloadProgress.percent.toFixed(1)}%`
+                  : "Connecting..."}
+              </span>
+            </div>
+
+            <ProgressBar nProgress={downloadProgress?.percent || (isInitiatingDownload ? 5 : 0)} />
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#cbd5e1" }}>
+              <span>
+                Speed: <strong style={{ color: "#51cf66" }}>{downloadProgress?.speed_mb_s ? `${downloadProgress.speed_mb_s.toFixed(2)} MB/s` : "Calculating..."}</strong>
+              </span>
+              <span>
+                {formatBytes(downloadProgress?.downloaded || 0)} / {formatBytes(downloadProgress?.total || selectedAsset?.size || 0)}
+              </span>
+            </div>
+
+            <DialogButton
+              className="rd-card-btn rd-card-btn-delete"
+              onClick={handleCancelDownload}
+              style={{ marginTop: "4px", padding: "5px 10px", fontSize: "11px", height: "auto" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                <FaBan /> Cancel Download
+              </div>
+            </DialogButton>
+          </div>
+        </PanelSectionRow>
+      )}
+
+      {/* Release Notes Accordion */}
       {release.body && (
         <PanelSectionRow>
           <div style={{ width: "100%" }}>
-            <ButtonItem layout="below" onClick={() => setShowChangelog(!showChangelog)}>
-              <span style={{ fontSize: "10px" }}>{showChangelog ? "Hide Changelog" : "View Release Notes"}</span>
-            </ButtonItem>
+            <Focusable
+              onActivate={() => setShowChangelog(!showChangelog)}
+              onClick={() => setShowChangelog(!showChangelog)}
+              className="rd-card-item"
+              style={{ padding: "6px 8px" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#74c0fc" }}>
+                <FaInfoCircle size={11} />
+                <span>{showChangelog ? "Hide Release Notes" : "View Release Notes"}</span>
+              </div>
+              <span style={{ fontSize: "10px", color: "#9aa4af" }}>{showChangelog ? "▲" : "▼"}</span>
+            </Focusable>
+
             {showChangelog && (
               <div
                 style={{
-                  maxHeight: "100px",
+                  maxHeight: "120px",
                   overflowY: "auto",
                   overflowX: "hidden",
-                  padding: "6px",
-                  marginTop: "3px",
-                  backgroundColor: "rgba(0,0,0,0.3)",
-                  borderRadius: "3px",
+                  padding: "8px",
+                  marginTop: "4px",
+                  backgroundColor: "rgba(0,0,0,0.4)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "6px",
                   fontSize: "10px",
+                  color: "#cbd5e1",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
-                  lineHeight: "1.3",
-                  opacity: 0.85,
+                  lineHeight: "1.4",
                 }}
               >
                 {release.body}
@@ -529,74 +669,58 @@ export function DownloadTab({
         </PanelSectionRow>
       )}
 
-      {/* Sleek Radio List for Packages */}
+      {/* Package Assets List */}
       {release.assets.length === 0 ? (
         <PanelSectionRow>
-          <div style={{ textAlign: "center", padding: "10px", opacity: 0.7, fontSize: "11px" }}>
-            <FaBoxOpen size={18} />
+          <div style={{ textAlign: "center", padding: "16px 8px", color: "#9aa4af", fontSize: "11px" }}>
+            <FaBoxOpen size={24} style={{ marginBottom: "6px", opacity: 0.7 }} />
             <div>No binary packages attached to this release.</div>
           </div>
         </PanelSectionRow>
       ) : (
         <>
           <PanelSectionRow>
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "2px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "bold", marginBottom: "2px" }}>
-                Select Package ({release.assets.length}):
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "11px", color: "#9aa4af", marginBottom: "2px" }}>
+                Select a package to download ({release.assets.length}):
               </div>
 
               <Focusable
                 flow-children="vertical"
-                style={{ display: "flex", flexDirection: "column", gap: "2px", width: "100%", boxSizing: "border-box" }}
+                style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }}
               >
                 {release.assets.map((asset) => {
                   const isSelected = selectedAsset && asset.id === selectedAsset.id;
-                  const isFocused = focusedAssetId === asset.id;
+                  const badgeType = getFileBadge(asset.name);
+                  const isAssetInstalled = installedPackages.some(
+                    (p) =>
+                      p.repository.toLowerCase() === repo.toLowerCase() &&
+                      p.installed_version === release.tag_name &&
+                      p.installed_asset === asset.name
+                  );
 
                   return (
                     <Focusable
                       key={asset.id}
-                      onFocus={() => setFocusedAssetId(asset.id)}
-                      onBlur={() => setFocusedAssetId((current) => (current === asset.id ? null : current))}
                       onActivate={() => setSelectedAssetId(asset.id)}
                       onClick={() => setSelectedAssetId(asset.id)}
-                      style={{
-                        padding: "5px 8px",
-                        borderRadius: "4px",
-                        backgroundColor: isFocused
-                          ? "#1a9fff"
-                          : isSelected
-                          ? "rgba(26, 159, 255, 0.15)"
-                          : "transparent",
-                        border: isFocused
-                          ? "1px solid #ffffff"
-                          : isSelected
-                          ? "1px solid rgba(26, 159, 255, 0.4)"
-                          : "1px solid transparent",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "6px",
-                        width: "100%",
-                        boxSizing: "border-box",
-                        transition: "background-color 0.15s ease",
-                      }}
+                      className={`rd-asset-card ${isSelected ? "selected" : ""}`}
                     >
-                      <span style={{ marginTop: "2px", flexShrink: 0 }}>
+                      <div style={{ marginTop: "2px", flexShrink: 0 }}>
                         {isSelected ? (
-                          <FaDotCircle style={{ color: isFocused ? "#ffffff" : "#1a9fff", fontSize: "12px" }} />
+                          <FaDotCircle style={{ color: "#1a9fff", fontSize: "13px" }} />
                         ) : (
-                          <FaRegCircle style={{ color: isFocused ? "#ffffff" : "rgba(255, 255, 255, 0.45)", fontSize: "12px" }} />
+                          <FaRegCircle style={{ color: "rgba(255, 255, 255, 0.4)", fontSize: "13px" }} />
                         )}
-                      </span>
+                      </div>
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: "1px", flex: 1, minWidth: 0, textAlign: "left" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px", flex: 1, minWidth: 0, textAlign: "left" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                           <span
                             style={{
                               fontSize: "11px",
-                              fontWeight: isSelected || isFocused ? "bold" : "normal",
-                              color: isFocused ? "#ffffff" : isSelected ? "#ffffff" : "rgba(255, 255, 255, 0.9)",
+                              fontWeight: isSelected ? "bold" : "500",
+                              color: "#ffffff",
                               wordBreak: "break-word",
                               overflowWrap: "anywhere",
                               whiteSpace: "normal",
@@ -605,33 +729,68 @@ export function DownloadTab({
                           >
                             {asset.name}
                           </span>
-                          {asset.is_recommended && (
+
+                          <span
+                            style={{
+                              fontSize: "8px",
+                              backgroundColor: "rgba(255, 255, 255, 0.12)",
+                              color: "#cbd5e1",
+                              padding: "1px 4px",
+                              borderRadius: "3px",
+                              textTransform: "uppercase",
+                              fontWeight: "600",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {badgeType}
+                          </span>
+
+                          {isAssetInstalled && (
                             <span
                               style={{
                                 fontSize: "8px",
-                                backgroundColor: isFocused ? "rgba(0, 0, 0, 0.3)" : "#2b8a3e",
-                                color: "#fff",
-                                padding: "0 3px",
-                                borderRadius: "2px",
+                                backgroundColor: "#2b8a3e",
+                                color: "#ffffff",
+                                padding: "1px 5px",
+                                borderRadius: "3px",
                                 display: "inline-flex",
                                 alignItems: "center",
-                                gap: "2px",
+                                gap: "3px",
+                                fontWeight: "bold",
                                 flexShrink: 0,
                               }}
                             >
-                              <FaLinux /> Rec
+                              <FaCheck size={8} /> Installed
+                            </span>
+                          )}
+
+                          {asset.is_recommended && !isAssetInstalled && (
+                            <span
+                              style={{
+                                fontSize: "8px",
+                                backgroundColor: "rgba(46, 204, 113, 0.2)",
+                                border: "1px solid rgba(46, 204, 113, 0.4)",
+                                color: "#a3e9c0",
+                                padding: "1px 5px",
+                                borderRadius: "3px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "3px",
+                                fontWeight: "bold",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <FaLinux /> Recommended
                             </span>
                           )}
                         </div>
-                        <span
-                          style={{
-                            fontSize: "10px",
-                            opacity: isFocused ? 0.9 : 0.65,
-                            color: isFocused ? "#ffffff" : undefined,
-                          }}
-                        >
-                          Size: {formatBytes(asset.size)}
-                        </span>
+
+                        <div style={{ fontSize: "10px", color: "#9aa4af", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span>Size: <strong style={{ color: "#ffffff" }}>{formatBytes(asset.size)}</strong></span>
+                          {asset.download_count > 0 && (
+                            <span>• {asset.download_count.toLocaleString()} downloads</span>
+                          )}
+                        </div>
                       </div>
                     </Focusable>
                   );
@@ -640,22 +799,123 @@ export function DownloadTab({
             </div>
           </PanelSectionRow>
 
-          {/* Destination Path Preview & Download Button */}
+          {/* Installation Target Path & Download Action */}
           <PanelSectionRow>
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
-              <div style={{ fontSize: "10px", opacity: 0.7, wordBreak: "break-all" }}>
-                Target: <code>~/Applications/{repo.split("/")[1] || repo}/</code>
-              </div>
-              <ButtonItem
-                layout="below"
-                disabled={!selectedAsset || !!isDownloading}
-                onClick={() => selectedAsset && handleStartDownload(repo, release, selectedAsset)}
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px", marginTop: "2px" }}>
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "#9aa4af",
+                  padding: "5px 8px",
+                  backgroundColor: "rgba(0,0,0,0.3)",
+                  borderRadius: "4px",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
-                  <FaDownload />
-                  {selectedAsset ? `Download & Extract (${formatBytes(selectedAsset.size)})` : "Select a Package"}
-                </div>
-              </ButtonItem>
+                <FaFolder color="#74c0fc" style={{ flexShrink: 0 }} />
+                <span>Installs to: <code style={{ color: "#cbd5e1" }}>~/Applications/{repo.split("/")[1] || repo}/</code></span>
+              </div>
+
+              {(() => {
+                const isSelectedInstalled = selectedAsset
+                  ? installedPackages.some(
+                      (p) =>
+                        p.repository.toLowerCase() === repo.toLowerCase() &&
+                        p.installed_version === release.tag_name &&
+                        p.installed_asset === selectedAsset.name
+                    )
+                  : false;
+
+                if (isDownloading) {
+                  return (
+                    <DialogButton
+                      className="rd-card-btn rd-card-btn-launch"
+                      disabled
+                      style={{
+                        padding: "8px 12px",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        height: "auto",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                        <FaDownload className="spin-icon" size={12} />
+                        <span>Downloading...</span>
+                      </div>
+                    </DialogButton>
+                  );
+                }
+
+                if (isSelectedInstalled) {
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%" }}>
+                      <DialogButton
+                        className="rd-card-btn rd-card-btn-installed"
+                        disabled
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          height: "auto",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                          <FaCheck color="#2ecc71" size={12} />
+                          <span>Installed ({release.tag_name})</span>
+                        </div>
+                      </DialogButton>
+                      <DialogButton
+                        className="rd-card-btn rd-card-btn-launch"
+                        onClick={onNavigateToApps}
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          height: "auto",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                          <FaBox size={12} />
+                          <span>Open in Apps ➔</span>
+                        </div>
+                      </DialogButton>
+                    </div>
+                  );
+                }
+
+                return (
+                  <DialogButton
+                    className="rd-card-btn rd-card-btn-launch"
+                    disabled={!selectedAsset}
+                    onClick={() => selectedAsset && handleStartDownload(repo, release, selectedAsset)}
+                    style={{
+                      padding: "8px 12px",
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      height: "auto",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                      <FaDownload size={12} />
+                      <span>
+                        {selectedAsset
+                          ? `Download & Install (${formatBytes(selectedAsset.size)})`
+                          : "Select a Package Above"}
+                      </span>
+                    </div>
+                  </DialogButton>
+                );
+              })()}
             </div>
           </PanelSectionRow>
         </>
