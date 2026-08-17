@@ -460,116 +460,110 @@ export function InstalledTab({
                         borderTop: "1px solid rgba(255, 255, 255, 0.06)",
                       }}
                     >
-                      {/* Row 1: Side-by-Side Executable Selector + Add to Steam */}
-                      <Focusable
-                        flow-children="horizontal"
+                    {/* Row 1: Full-width Executable Selector */}
+                    <DialogButton
+                      className="rd-card-btn"
+                      onClick={() => handleCycleExecutable(pkg.id)}
+                      style={{
+                        width: "100%",
+                        padding: "7px 10px",
+                        fontSize: "10px",
+                        height: "auto",
+                        backgroundColor: "rgba(255, 255, 255, 0.07)",
+                        borderColor: "rgba(255, 255, 255, 0.12)",
+                        color: "#cbd5e1",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", width: "100%" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0, overflow: "hidden" }}>
+                          <FaCog size={11} style={{ flexShrink: 0, opacity: 0.8 }} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: "500" }}>
+                            {selectedExeName}
+                          </span>
+                        </div>
+                        {hasMultipleExes && <FaChevronDown size={8} style={{ flexShrink: 0, opacity: 0.6 }} />}
+                      </div>
+                    </DialogButton>
+
+                    {/* Row 2: 3-Buttons Row (Add to Steam + Update + Delete) */}
+                    <Focusable
+                      flow-children="horizontal"
+                      style={{
+                        display: "flex",
+                        gap: "5px",
+                        width: "100%",
+                      }}
+                    >
+                      {/* Button 1: Add to Steam */}
+                      <DialogButton
+                        className={`rd-card-btn rd-card-btn-steam ${isAdded ? "rd-steam-added" : ""}`}
+                        disabled={isAdding}
+                        onClick={() => handleAddToSteam(pkg, selectedExeMap[pkg.id])}
                         style={{
-                          display: "flex",
-                          gap: "5px",
-                          width: "100%",
+                          flex: 1,
+                          minWidth: 0,
+                          padding: "6px 4px",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          height: "auto",
+                          boxSizing: "border-box",
                         }}
                       >
-                        {/* Left: Executable Selector */}
-                        <DialogButton
-                          className="rd-card-btn"
-                          onClick={() => handleCycleExecutable(pkg.id)}
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            padding: "7px 8px",
-                            fontSize: "10px",
-                            height: "auto",
-                            backgroundColor: "rgba(255, 255, 255, 0.07)",
-                            borderColor: "rgba(255, 255, 255, 0.12)",
-                            color: "#cbd5e1",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "4px", width: "100%" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0, overflow: "hidden" }}>
-                              <FaCog size={10} style={{ flexShrink: 0, opacity: 0.8 }} />
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: "500" }}>
-                                {selectedExeName}
-                              </span>
-                            </div>
-                            {hasMultipleExes && <FaChevronDown size={8} style={{ flexShrink: 0, opacity: 0.6 }} />}
-                          </div>
-                        </DialogButton>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {isAdded ? (
+                            <>
+                              <FaCheck color="#2ecc71" size={10} style={{ flexShrink: 0 }} />
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Added ✓</span>
+                            </>
+                          ) : (
+                            <>
+                              <FaSteam size={11} style={{ flexShrink: 0 }} />
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isAdding ? "Adding..." : "Add to Steam"}</span>
+                            </>
+                          )}
+                        </div>
+                      </DialogButton>
 
-                        {/* Right: Add to Steam Button */}
-                        <DialogButton
-                          className={`rd-card-btn rd-card-btn-steam ${isAdded ? "rd-steam-added" : ""}`}
-                          disabled={isAdding}
-                          onClick={() => handleAddToSteam(pkg, selectedExeMap[pkg.id])}
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            padding: "7px 8px",
-                            fontSize: "11px",
-                            fontWeight: "bold",
-                            height: "auto",
-                            boxSizing: "border-box",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
-                            {isAdded ? (
-                              <>
-                                <FaCheck color="#2ecc71" size={11} />
-                                <span>Added ✓</span>
-                              </>
-                            ) : (
-                              <>
-                                <FaSteam size={12} style={{ flexShrink: 0 }} />
-                                <span>{isAdding ? "Adding..." : "Add to Steam"}</span>
-                              </>
-                            )}
-                          </div>
-                        </DialogButton>
-                      </Focusable>
-
-                      {/* Row 2: Side-by-Side Update & Delete */}
-                      <Focusable
-                        flow-children="horizontal"
+                      {/* Button 2: Update */}
+                      <DialogButton
+                        className={`rd-card-btn rd-card-btn-update ${pkg.has_update ? "rd-update-available" : ""}`}
+                        disabled={isUpgrading}
+                        onClick={() => handleUpgrade(pkg)}
                         style={{
-                          display: "flex",
-                          gap: "5px",
-                          width: "100%",
+                          flex: 1,
+                          minWidth: 0,
+                          padding: "6px 4px",
+                          fontSize: "10px",
+                          height: "auto",
+                          boxSizing: "border-box",
                         }}
                       >
-                        <DialogButton
-                          className={`rd-card-btn rd-card-btn-update ${pkg.has_update ? "rd-update-available" : ""}`}
-                          disabled={isUpgrading}
-                          onClick={() => handleUpgrade(pkg)}
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            padding: "6px 8px",
-                            fontSize: "11px",
-                            height: "auto",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            <FaArrowUp size={10} style={{ flexShrink: 0 }} className={isUpgrading ? "spin-icon" : ""} />
-                            <span>{isUpgrading ? "Updating..." : "Update"}</span>
-                          </div>
-                        </DialogButton>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <FaArrowUp size={9} style={{ flexShrink: 0 }} className={isUpgrading ? "spin-icon" : ""} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isUpgrading ? "Updating..." : "Update"}</span>
+                        </div>
+                      </DialogButton>
 
-                        <DialogButton
-                          className={`rd-card-btn rd-card-btn-delete ${isConfirmingDelete ? "rd-confirm-delete" : ""}`}
-                          onClick={() => handleUninstall(pkg)}
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            padding: "6px 8px",
-                            fontSize: "11px",
-                            height: "auto",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            <FaTrash size={10} style={{ flexShrink: 0 }} />
-                            <span>{isConfirmingDelete ? "Confirm?" : "Delete"}</span>
-                          </div>
-                        </DialogButton>
-                      </Focusable>
+                      {/* Button 3: Delete */}
+                      <DialogButton
+                        className={`rd-card-btn rd-card-btn-delete ${isConfirmingDelete ? "rd-confirm-delete" : ""}`}
+                        onClick={() => handleUninstall(pkg)}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          padding: "6px 4px",
+                          fontSize: "10px",
+                          height: "auto",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <FaTrash size={9} style={{ flexShrink: 0 }} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isConfirmingDelete ? "Confirm?" : "Delete"}</span>
+                        </div>
+                      </DialogButton>
+                    </Focusable>
                     </div>
                   )}
                 </div>

@@ -74,8 +74,20 @@ export function DownloadTab({
   const [lastInstalledName, setLastInstalledName] = useState<string | null>(null);
 
   const topRef = useRef<HTMLDivElement>(null);
+  const cancelBtnRef = useRef<HTMLDivElement>(null);
+  const viewInAppsBtnRef = useRef<HTMLDivElement>(null);
+  const breadcrumbRef = useRef<HTMLDivElement>(null);
 
-  const scrollToTop = () => {
+  const focusElement = (el: HTMLElement | null) => {
+    if (!el) return;
+    try {
+      el.focus?.();
+      const btn = el.querySelector?.("button, [tabindex], .rd-card-btn, .rd-breadcrumb-bar") as HTMLElement | null;
+      btn?.focus?.();
+    } catch (e) {}
+  };
+
+  const scrollToTopAndFocus = (target?: "cancel" | "viewInApps" | "top") => {
     if (topRef.current) {
       topRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -86,6 +98,16 @@ export function DownloadTab({
         window;
       scrollContainer?.scrollTo?.({ top: 0, behavior: "smooth" });
     } catch (e) {}
+
+    setTimeout(() => {
+      if (target === "viewInApps" && viewInAppsBtnRef.current) {
+        focusElement(viewInAppsBtnRef.current);
+      } else if (target === "cancel" && cancelBtnRef.current) {
+        focusElement(cancelBtnRef.current);
+      } else if (breadcrumbRef.current) {
+        focusElement(breadcrumbRef.current);
+      }
+    }, 100);
   };
 
   // Helper to extract file extension
@@ -146,7 +168,7 @@ export function DownloadTab({
 
     onDownloadStarted();
     setTimeout(() => {
-      scrollToTop();
+      scrollToTopAndFocus("cancel");
     }, 50);
 
     toaster.toast({
@@ -204,9 +226,15 @@ export function DownloadTab({
 
   useEffect(() => {
     if (isDownloading) {
-      scrollToTop();
+      scrollToTopAndFocus("cancel");
     }
   }, [isDownloading]);
+
+  useEffect(() => {
+    if (lastInstalledName && !isDownloading) {
+      scrollToTopAndFocus("viewInApps");
+    }
+  }, [lastInstalledName, isDownloading]);
 
   // Reset to repos list if current repo is deleted from Settings
   useEffect(() => {
@@ -546,20 +574,22 @@ export function DownloadTab({
       {/* Navigation Breadcrumbs */}
       <PanelSectionRow>
         <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "6px" }}>
-          <Focusable
-            onActivate={() => setCurrentStep({ type: "versions", repo })}
-            onClick={() => setCurrentStep({ type: "versions", repo })}
-            className="rd-breadcrumb-bar"
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#74c0fc" }}>
-              <FaArrowLeft size={10} />
-              <span style={{ fontWeight: "bold" }}>Versions</span>
-            </div>
-            <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
-            <span style={{ color: "#ffffff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {release.tag_name}
-            </span>
-          </Focusable>
+          <div ref={breadcrumbRef} style={{ width: "100%" }}>
+            <Focusable
+              onActivate={() => setCurrentStep({ type: "versions", repo })}
+              onClick={() => setCurrentStep({ type: "versions", repo })}
+              className="rd-breadcrumb-bar"
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#74c0fc" }}>
+                <FaArrowLeft size={10} />
+                <span style={{ fontWeight: "bold" }}>Versions</span>
+              </div>
+              <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+              <span style={{ color: "#ffffff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {release.tag_name}
+              </span>
+            </Focusable>
+          </div>
         </div>
       </PanelSectionRow>
 
@@ -585,16 +615,18 @@ export function DownloadTab({
               <FaCheckCircle color="#2ecc71" size={14} />
               <span>{lastInstalledName} installed!</span>
             </div>
-            <DialogButton
-              className="rd-card-btn rd-card-btn-launch"
-              onClick={() => {
-                onInstalledRefresh();
-                onNavigateToApps();
-              }}
-              style={{ padding: "4px 8px", fontSize: "10px", height: "auto" }}
-            >
-              <span>View in Apps ➔</span>
-            </DialogButton>
+            <div ref={viewInAppsBtnRef} style={{ flexShrink: 0 }}>
+              <DialogButton
+                className="rd-card-btn rd-card-btn-launch"
+                onClick={() => {
+                  onInstalledRefresh();
+                  onNavigateToApps();
+                }}
+                style={{ padding: "4px 8px", fontSize: "10px", height: "auto" }}
+              >
+                <span>View in Apps ➔</span>
+              </DialogButton>
+            </div>
           </div>
         </PanelSectionRow>
       )}
@@ -644,15 +676,17 @@ export function DownloadTab({
               </span>
             </div>
 
-            <DialogButton
-              className="rd-card-btn rd-card-btn-delete"
-              onClick={handleCancelDownload}
-              style={{ marginTop: "4px", padding: "5px 10px", fontSize: "11px", height: "auto" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
-                <FaBan /> Cancel Download
-              </div>
-            </DialogButton>
+            <div ref={cancelBtnRef} style={{ width: "100%", marginTop: "4px" }}>
+              <DialogButton
+                className="rd-card-btn rd-card-btn-delete"
+                onClick={handleCancelDownload}
+                style={{ width: "100%", padding: "5px 10px", fontSize: "11px", height: "auto", boxSizing: "border-box" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                  <FaBan /> Cancel Download
+                </div>
+              </DialogButton>
+            </div>
           </div>
         </PanelSectionRow>
       )}
