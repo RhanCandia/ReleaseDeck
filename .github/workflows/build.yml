@@ -1,0 +1,73 @@
+name: Build & ReleaseDeck Package
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build, Test & Package Plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install Node Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-Check TypeScript
+        run: pnpm run type-check
+
+      - name: Build Frontend Bundle
+        run: pnpm run build
+
+      - name: Run Python Backend Unit Tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Run E2E Simulation Harness
+        run: python3 tests/e2e_harness.py
+
+      - name: Create Decky Plugin Zip Package
+        run: |
+          mkdir -p release_staging/ReleaseDeck
+          cp -r dist main.py backend plugin.json package.json README.md LICENSE assets release_staging/ReleaseDeck/ 2>/dev/null || true
+          cd release_staging
+          zip -r ../ReleaseDeck.zip ReleaseDeck
+          cd ..
+          rm -rf release_staging
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReleaseDeck-Plugin
+          path: ReleaseDeck.zip
+          retention-days: 14
+
+      - name: Create GitHub Release (On Tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ReleaseDeck.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

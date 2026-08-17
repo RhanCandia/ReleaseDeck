@@ -7,7 +7,9 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "type-check": "tsc --noEmit",
-    "test": "echo \"Running test suite...\" && python3 -m unittest discover -s tests"
+    "test": "python3 -m unittest discover -s tests -v && python3 tests/e2e_harness.py",
+    "package": "bash scripts/package.sh",
+    "deploy": "bash scripts/deploy.sh"
   },
   "keywords": [
     "decky",
