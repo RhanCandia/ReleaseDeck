@@ -182,6 +182,17 @@ bash scripts/deploy.sh -i <STEAM_DECK_IP>
 
 ---
 
+## 🙏 Acknowledgments & Citations
+
+Release Deck was inspired and guided by the following projects and tools:
+
+* **[Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader)** — The plugin loader and framework for the Steam Deck.
+* **[Decky Plugin Template](https://github.com/SteamDeckHomebrew/decky-plugin-template)** — The official template and standard for developing Decky Loader plugins.
+* **QuickLaunch** — Inspiration for quick application launching and executable management directly within the Steam Quick Access Menu.
+* **GitHubLauncher** — Inspiration for discovering, downloading, and managing GitHub release packages on the Steam Deck.
+
+---
+
 ## 📄 License
 
 This project is licensed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
