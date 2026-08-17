@@ -9,8 +9,8 @@ import {
   TextField,
 } from "@decky/ui";
 import { toaster } from "@decky/api";
-import { useState } from "react";
-import { FaDownload, FaLinux, FaBan, FaGithub, FaCheckCircle, FaExclamationTriangle, FaStar } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaDownload, FaLinux, FaBan, FaGithub, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { Api } from "../api";
 import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings } from "../types";
 import { formatBytes } from "../utils/format";
@@ -29,6 +29,7 @@ export function DownloadTab({
   onInstalledRefresh,
 }: DownloadTabProps) {
   const [repoInput, setRepoInput] = useState<string>("");
+  const [selectedFav, setSelectedFav] = useState<string>("");
   const [isLoadingReleases, setIsLoadingReleases] = useState<boolean>(false);
   const [releases, setReleases] = useState<GitHubRelease[]>([]);
   const [selectedReleaseIndex, setSelectedReleaseIndex] = useState<number>(0);
@@ -38,8 +39,17 @@ export function DownloadTab({
 
   const pinnedRepos = settings?.pinned_repos || [];
 
+  // Sync selected favorite with repoInput
+  useEffect(() => {
+    if (repoInput && pinnedRepos.includes(repoInput.trim())) {
+      setSelectedFav(repoInput.trim());
+    } else {
+      setSelectedFav("");
+    }
+  }, [repoInput, pinnedRepos]);
+
   const handleFetchReleases = async (targetRepo?: string) => {
-    const repo = (targetRepo || repoInput).trim();
+    const repo = (targetRepo !== undefined ? targetRepo : repoInput).trim();
     if (!repo) {
       setStatusMessage({ type: "error", text: "Please enter a repository in 'owner/repo' format." });
       return;
@@ -72,6 +82,21 @@ export function DownloadTab({
       setStatusMessage({ type: "error", text: `Failed to query repository: ${e?.message || e}` });
     } finally {
       setIsLoadingReleases(false);
+    }
+  };
+
+  const handleFavoriteDropdownChange = (option: any) => {
+    let chosen = "";
+    if (typeof option === "string") {
+      chosen = option;
+    } else if (option && typeof option === "object") {
+      chosen = option.data || option.value || option.label || "";
+    }
+
+    if (chosen) {
+      setSelectedFav(chosen);
+      setRepoInput(chosen);
+      handleFetchReleases(chosen);
     }
   };
 
@@ -145,59 +170,31 @@ export function DownloadTab({
 
   return (
     <PanelSection title="Download">
-      {/* Pinned Repos Quick Select Buttons (Fast, 1-Click Gamepad Selection) */}
+      {/* Favorite Repos Dropdown */}
       {pinnedRepos.length > 0 && (
-        <PanelSectionRow>
-          <div style={{ width: "100%", boxSizing: "border-box" }}>
-            <div style={{ fontSize: "11px", opacity: 0.8, marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
-              <FaStar color="#ffd43b" /> Favorite Repositories:
-            </div>
-            <Focusable
-              flow-children="vertical"
-              style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }}
-            >
-              {pinnedRepos.map((repo) => {
-                const isSelected = repoInput.trim() === repo;
-                return (
-                  <ButtonItem
-                    key={repo}
-                    layout="below"
-                    onClick={() => {
-                      setRepoInput(repo);
-                      handleFetchReleases(repo);
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        fontSize: "11px",
-                        wordBreak: "break-all",
-                        color: isSelected ? "#1a9fff" : undefined,
-                        fontWeight: isSelected ? "bold" : "normal",
-                        width: "100%",
-                      }}
-                    >
-                      <span>{repo}</span>
-                      {isSelected ? <span>● Active</span> : <span>Fetch ➔</span>}
-                    </div>
-                  </ButtonItem>
-                );
-              })}
-            </Focusable>
-          </div>
-        </PanelSectionRow>
+        <DropdownItem
+          label="Favorite Repos"
+          menuLabel="Select Favorite Repository"
+          strDefaultLabel="Select a favorite repo..."
+          rgOptions={pinnedRepos.map((r) => ({ data: r, label: r }))}
+          selectedOption={selectedFav || (pinnedRepos.includes(repoInput.trim()) ? repoInput.trim() : "")}
+          onChange={handleFavoriteDropdownChange}
+        />
       )}
 
-      {/* Manual Repo Input */}
+      {/* Repository Input */}
       <PanelSectionRow>
         <div style={{ width: "100%", boxSizing: "border-box" }}>
           <TextField
+            key={`repo-input-${selectedFav || repoInput}`}
             label="GitHub Repository"
             description="Format: owner/repo"
             value={repoInput}
-            onChange={(e) => setRepoInput(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setRepoInput(val);
+              setSelectedFav(pinnedRepos.includes(val.trim()) ? val.trim() : "");
+            }}
           />
         </div>
       </PanelSectionRow>

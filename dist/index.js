@@ -115,8 +115,6 @@ function FaGithub (props) {
   return GenIcon({"attr":{"viewBox":"0 0 448 512"},"child":[{"tag":"path","attr":{"d":"M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"},"child":[]}]})(props);
 }function FaSave (props) {
   return GenIcon({"attr":{"viewBox":"0 0 448 512"},"child":[{"tag":"path","attr":{"d":"M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z"},"child":[]}]})(props);
-}function FaStar (props) {
-  return GenIcon({"attr":{"viewBox":"0 0 576 512"},"child":[{"tag":"path","attr":{"d":"M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z"},"child":[]}]})(props);
 }function FaSync (props) {
   return GenIcon({"attr":{"viewBox":"0 0 512 512"},"child":[{"tag":"path","attr":{"d":"M440.65 12.57l4 82.77A247.16 247.16 0 0 0 255.83 8C134.73 8 33.91 94.92 12.29 209.82A12 12 0 0 0 24.09 224h49.05a12 12 0 0 0 11.67-9.26 175.91 175.91 0 0 1 317-56.94l-101.46-4.86a12 12 0 0 0-12.57 12v47.41a12 12 0 0 0 12 12H500a12 12 0 0 0 12-12V12a12 12 0 0 0-12-12h-47.37a12 12 0 0 0-11.98 12.57zM255.83 432a175.61 175.61 0 0 1-146-77.8l101.8 4.87a12 12 0 0 0 12.57-12v-47.4a12 12 0 0 0-12-12H12a12 12 0 0 0-12 12V500a12 12 0 0 0 12 12h47.35a12 12 0 0 0 12-12.6l-4.15-82.57A247.17 247.17 0 0 0 255.83 504c121.11 0 221.93-86.92 243.55-201.82a12 12 0 0 0-11.8-14.18h-49.05a12 12 0 0 0-11.67 9.26A175.86 175.86 0 0 1 255.83 432z"},"child":[]}]})(props);
 }function FaTrash (props) {
@@ -156,6 +154,7 @@ function formatBytes(bytes, decimals = 1) {
 
 function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalledRefresh, }) {
     const [repoInput, setRepoInput] = SP_REACT.useState("");
+    const [selectedFav, setSelectedFav] = SP_REACT.useState("");
     const [isLoadingReleases, setIsLoadingReleases] = SP_REACT.useState(false);
     const [releases, setReleases] = SP_REACT.useState([]);
     const [selectedReleaseIndex, setSelectedReleaseIndex] = SP_REACT.useState(0);
@@ -163,8 +162,17 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
     const [statusMessage, setStatusMessage] = SP_REACT.useState(null);
     const [showChangelog, setShowChangelog] = SP_REACT.useState(false);
     const pinnedRepos = settings?.pinned_repos || [];
+    // Sync selected favorite with repoInput
+    SP_REACT.useEffect(() => {
+        if (repoInput && pinnedRepos.includes(repoInput.trim())) {
+            setSelectedFav(repoInput.trim());
+        }
+        else {
+            setSelectedFav("");
+        }
+    }, [repoInput, pinnedRepos]);
     const handleFetchReleases = async (targetRepo) => {
-        const repo = (targetRepo || repoInput).trim();
+        const repo = (targetRepo !== undefined ? targetRepo : repoInput).trim();
         if (!repo) {
             setStatusMessage({ type: "error", text: "Please enter a repository in 'owner/repo' format." });
             return;
@@ -197,6 +205,20 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
         }
         finally {
             setIsLoadingReleases(false);
+        }
+    };
+    const handleFavoriteDropdownChange = (option) => {
+        let chosen = "";
+        if (typeof option === "string") {
+            chosen = option;
+        }
+        else if (option && typeof option === "object") {
+            chosen = option.data || option.value || option.label || "";
+        }
+        if (chosen) {
+            setSelectedFav(chosen);
+            setRepoInput(chosen);
+            handleFetchReleases(chosen);
         }
     };
     const currentRelease = releases[selectedReleaseIndex];
@@ -259,22 +281,11 @@ function DownloadTab({ settings, downloadProgress, onDownloadStarted, onInstalle
     const isDownloadingThisRepo = downloadProgress &&
         downloadProgress.status !== "complete" &&
         downloadProgress.status !== "error";
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Download", children: [pinnedRepos.length > 0 && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { width: "100%", boxSizing: "border-box" }, children: [SP_JSX.jsxs("div", { style: { fontSize: "11px", opacity: 0.8, marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }, children: [SP_JSX.jsx(FaStar, { color: "#ffd43b" }), " Favorite Repositories:"] }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "vertical", style: { display: "flex", flexDirection: "column", gap: "4px", width: "100%", boxSizing: "border-box" }, children: pinnedRepos.map((repo) => {
-                                const isSelected = repoInput.trim() === repo;
-                                return (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => {
-                                        setRepoInput(repo);
-                                        handleFetchReleases(repo);
-                                    }, children: SP_JSX.jsxs("div", { style: {
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            fontSize: "11px",
-                                            wordBreak: "break-all",
-                                            color: isSelected ? "#1a9fff" : undefined,
-                                            fontWeight: isSelected ? "bold" : "normal",
-                                            width: "100%",
-                                        }, children: [SP_JSX.jsx("span", { children: repo }), isSelected ? SP_JSX.jsx("span", { children: "\u25CF Active" }) : SP_JSX.jsx("span", { children: "Fetch \u2794" })] }) }, repo));
-                            }) })] }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Repository", description: "Format: owner/repo", value: repoInput, onChange: (e) => setRepoInput(e.target.value) }) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isLoadingReleases || !!isDownloadingThisRepo || !repoInput.trim(), onClick: () => handleFetchReleases(), children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaGithub, {}), isLoadingReleases ? "Querying GitHub..." : "Fetch Releases"] }) }) }), isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "10px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), statusMessage && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "Download", children: [pinnedRepos.length > 0 && (SP_JSX.jsx(DFL.DropdownItem, { label: "Favorite Repos", menuLabel: "Select Favorite Repository", strDefaultLabel: "Select a favorite repo...", rgOptions: pinnedRepos.map((r) => ({ data: r, label: r })), selectedOption: selectedFav || (pinnedRepos.includes(repoInput.trim()) ? repoInput.trim() : ""), onChange: handleFavoriteDropdownChange })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { width: "100%", boxSizing: "border-box" }, children: SP_JSX.jsx(DFL.TextField, { label: "GitHub Repository", description: "Format: owner/repo", value: repoInput, onChange: (e) => {
+                            const val = e.target.value;
+                            setRepoInput(val);
+                            setSelectedFav(pinnedRepos.includes(val.trim()) ? val.trim() : "");
+                        } }, `repo-input-${selectedFav || repoInput}`) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: isLoadingReleases || !!isDownloadingThisRepo || !repoInput.trim(), onClick: () => handleFetchReleases(), children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }, children: [SP_JSX.jsx(FaGithub, {}), isLoadingReleases ? "Querying GitHub..." : "Fetch Releases"] }) }) }), isLoadingReleases && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", justifyContent: "center", padding: "10px" }, children: SP_JSX.jsx(DFL.Spinner, {}) }) })), statusMessage && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: {
                         padding: "6px 10px",
                         borderRadius: "4px",
                         fontSize: "11px",
