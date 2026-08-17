@@ -162,6 +162,7 @@ function ReleaseDeckContent() {
           downloadProgress={downloadProgress}
           onDownloadStarted={() => {}}
           onInstalledRefresh={refreshInstalled}
+          onNavigateToSettings={() => setActiveTab("settings")}
         />
       )}
 

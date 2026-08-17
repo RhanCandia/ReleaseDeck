@@ -6,11 +6,10 @@ import {
   PanelSectionRow,
   ProgressBar,
   Spinner,
-  TextField,
 } from "@decky/ui";
 import { toaster } from "@decky/api";
 import { useState, useEffect } from "react";
-import { FaDownload, FaLinux, FaBan, FaGithub, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import { FaDownload, FaLinux, FaBan, FaCheckCircle, FaExclamationTriangle, FaCog, FaStar } from "react-icons/fa";
 import { Api } from "../api";
 import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings } from "../types";
 import { formatBytes } from "../utils/format";
@@ -20,6 +19,7 @@ interface DownloadTabProps {
   downloadProgress: DownloadProgress | null;
   onDownloadStarted: () => void;
   onInstalledRefresh: () => void;
+  onNavigateToSettings: () => void;
 }
 
 export function DownloadTab({
@@ -27,9 +27,11 @@ export function DownloadTab({
   downloadProgress,
   onDownloadStarted,
   onInstalledRefresh,
+  onNavigateToSettings,
 }: DownloadTabProps) {
-  const [repoInput, setRepoInput] = useState<string>("");
-  const [selectedFav, setSelectedFav] = useState<string>("");
+  const pinnedRepos = settings?.pinned_repos || [];
+
+  const [selectedRepoIndex, setSelectedRepoIndex] = useState<number>(0);
   const [isLoadingReleases, setIsLoadingReleases] = useState<boolean>(false);
   const [releases, setReleases] = useState<GitHubRelease[]>([]);
   const [selectedReleaseIndex, setSelectedReleaseIndex] = useState<number>(0);
@@ -37,21 +39,12 @@ export function DownloadTab({
   const [statusMessage, setStatusMessage] = useState<{ type: "error" | "info" | "success"; text: string } | null>(null);
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
 
-  const pinnedRepos = settings?.pinned_repos || [];
+  const currentRepoName = pinnedRepos[selectedRepoIndex] || "";
 
-  // Sync selected favorite with repoInput
-  useEffect(() => {
-    if (repoInput && pinnedRepos.includes(repoInput.trim())) {
-      setSelectedFav(repoInput.trim());
-    } else {
-      setSelectedFav("");
-    }
-  }, [repoInput, pinnedRepos]);
-
-  const handleFetchReleases = async (targetRepo?: string) => {
-    const repo = (targetRepo !== undefined ? targetRepo : repoInput).trim();
+  // Auto-fetch releases when selected repo changes or when repos are loaded
+  const fetchReleasesForRepo = async (repo: string) => {
     if (!repo) {
-      setStatusMessage({ type: "error", text: "Please enter a repository in 'owner/repo' format." });
+      setReleases([]);
       return;
     }
 
@@ -75,51 +68,69 @@ export function DownloadTab({
       } else {
         setStatusMessage({
           type: "error",
-          text: res.error || "No releases found for this repository.",
+          text: res.error || `No releases found for ${repo}.`,
         });
       }
     } catch (e: any) {
-      setStatusMessage({ type: "error", text: `Failed to query repository: ${e?.message || e}` });
+      setStatusMessage({ type: "error", text: `Failed to query GitHub: ${e?.message || e}` });
     } finally {
       setIsLoadingReleases(false);
     }
   };
 
-  const handleFavoriteDropdownChange = (option: any) => {
-    let chosen = "";
-    if (typeof option === "string") {
-      chosen = option;
-    } else if (option && typeof option === "object") {
-      chosen = option.data || option.value || option.label || "";
+  // Initial load when pinnedRepos becomes available
+  useEffect(() => {
+    if (pinnedRepos.length > 0) {
+      const validIndex = selectedRepoIndex < pinnedRepos.length ? selectedRepoIndex : 0;
+      setSelectedRepoIndex(validIndex);
+      fetchReleasesForRepo(pinnedRepos[validIndex]);
+    } else {
+      setReleases([]);
+    }
+  }, [pinnedRepos.length]);
+
+  const handleRepoDropdownChange = (option: any) => {
+    let index = 0;
+    if (typeof option === "number") {
+      index = option;
+    } else if (option && typeof option === "object" && typeof option.data === "number") {
+      index = option.data;
     }
 
-    if (chosen) {
-      setSelectedFav(chosen);
-      setRepoInput(chosen);
-      handleFetchReleases(chosen);
+    if (index >= 0 && index < pinnedRepos.length) {
+      setSelectedRepoIndex(index);
+      fetchReleasesForRepo(pinnedRepos[index]);
     }
   };
 
   const currentRelease: GitHubRelease | undefined = releases[selectedReleaseIndex];
   const selectedAsset: GitHubAsset | undefined = currentRelease?.assets.find((a) => a.id === selectedAssetId);
 
-  const handleSelectRelease = (index: number) => {
-    setSelectedReleaseIndex(index);
-    const rel = releases[index];
-    if (rel && rel.assets.length > 0) {
-      const rec = rel.assets.find((a) => a.is_recommended) || rel.assets[0];
-      setSelectedAssetId(rec ? rec.id : null);
+  const handleSelectRelease = (option: any) => {
+    let index = 0;
+    if (typeof option === "number") {
+      index = option;
+    } else if (option && typeof option === "object" && typeof option.data === "number") {
+      index = option.data;
+    }
+
+    if (index >= 0 && index < releases.length) {
+      setSelectedReleaseIndex(index);
+      const rel = releases[index];
+      if (rel && rel.assets.length > 0) {
+        const rec = rel.assets.find((a) => a.is_recommended) || rel.assets[0];
+        setSelectedAssetId(rec ? rec.id : null);
+      }
     }
   };
 
   const handleStartDownload = async () => {
-    if (!currentRelease || !selectedAsset) {
-      setStatusMessage({ type: "error", text: "Please select a version and a release asset to download." });
+    if (!currentRelease || !selectedAsset || !currentRepoName) {
+      setStatusMessage({ type: "error", text: "Please select a release asset to download." });
       return;
     }
 
-    const repoName = repoInput.trim();
-    const displayName = currentRelease.name || repoName.split("/")[1] || repoName;
+    const displayName = currentRelease.name || currentRepoName.split("/")[1] || currentRepoName;
 
     onDownloadStarted();
     toaster.toast({
@@ -129,7 +140,7 @@ export function DownloadTab({
 
     try {
       const res = await Api.startDownload({
-        repo: repoName,
+        repo: currentRepoName,
         name: displayName,
         version: currentRelease.tag_name,
         asset_name: selectedAsset.name,
@@ -163,54 +174,59 @@ export function DownloadTab({
     });
   };
 
-  const isDownloadingThisRepo =
+  const isDownloading =
     downloadProgress &&
     downloadProgress.status !== "complete" &&
     downloadProgress.status !== "error";
 
+  // If no repos are pinned, show empty state with direct link to Settings
+  if (pinnedRepos.length === 0) {
+    return (
+      <PanelSection title="Download">
+        <PanelSectionRow>
+          <div
+            style={{
+              padding: "16px 8px",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "8px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <FaStar size={26} color="#ffd43b" />
+            <div style={{ fontSize: "13px", fontWeight: "bold" }}>No Repositories Added Yet</div>
+            <div style={{ fontSize: "11px", opacity: 0.75, lineHeight: "1.3" }}>
+              Add your favorite GitHub repositories (e.g. <code>owner/repo</code>) in Settings to start downloading packages.
+            </div>
+            <div style={{ marginTop: "6px", width: "100%" }}>
+              <ButtonItem layout="below" onClick={onNavigateToSettings}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
+                  <FaCog /> Open Settings & Add Repos
+                </div>
+              </ButtonItem>
+            </div>
+          </div>
+        </PanelSectionRow>
+      </PanelSection>
+    );
+  }
+
   return (
     <PanelSection title="Download">
       {/* Favorite Repos Dropdown */}
-      {pinnedRepos.length > 0 && (
-        <DropdownItem
-          label="Favorite Repos"
-          menuLabel="Select Favorite Repository"
-          strDefaultLabel="Select a favorite repo..."
-          rgOptions={pinnedRepos.map((r) => ({ data: r, label: r }))}
-          selectedOption={selectedFav || (pinnedRepos.includes(repoInput.trim()) ? repoInput.trim() : "")}
-          onChange={handleFavoriteDropdownChange}
-        />
-      )}
-
-      {/* Repository Input */}
-      <PanelSectionRow>
-        <div style={{ width: "100%", boxSizing: "border-box" }}>
-          <TextField
-            key={`repo-input-${selectedFav || repoInput}`}
-            label="GitHub Repository"
-            description="Format: owner/repo"
-            value={repoInput}
-            onChange={(e) => {
-              const val = e.target.value;
-              setRepoInput(val);
-              setSelectedFav(pinnedRepos.includes(val.trim()) ? val.trim() : "");
-            }}
-          />
-        </div>
-      </PanelSectionRow>
-
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          disabled={isLoadingReleases || !!isDownloadingThisRepo || !repoInput.trim()}
-          onClick={() => handleFetchReleases()}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }}>
-            <FaGithub />
-            {isLoadingReleases ? "Querying GitHub..." : "Fetch Releases"}
-          </div>
-        </ButtonItem>
-      </PanelSectionRow>
+      <DropdownItem
+        label="Repository"
+        menuLabel="Select Favorite Repository"
+        rgOptions={pinnedRepos.map((r, index) => ({
+          data: index,
+          label: r,
+        }))}
+        selectedOption={selectedRepoIndex}
+        onChange={handleRepoDropdownChange}
+      />
 
       {/* Loading Spinner */}
       {isLoadingReleases && (
@@ -257,7 +273,7 @@ export function DownloadTab({
       )}
 
       {/* Active Download Progress Section */}
-      {isDownloadingThisRepo && (
+      {isDownloading && (
         <PanelSectionRow>
           <div
             style={{
@@ -299,8 +315,8 @@ export function DownloadTab({
         </PanelSectionRow>
       )}
 
-      {/* Release Selection */}
-      {releases.length > 0 && (
+      {/* Release Version Selection */}
+      {!isLoadingReleases && releases.length > 0 && (
         <>
           <DropdownItem
             label="Version"
@@ -310,12 +326,7 @@ export function DownloadTab({
               label: `${rel.tag_name}${index === 0 ? " (Latest)" : ""}${rel.prerelease ? " [Pre]" : ""}`,
             }))}
             selectedOption={selectedReleaseIndex}
-            onChange={(item: any) => {
-              const chosen = item?.data !== undefined ? item.data : item;
-              if (typeof chosen === "number") {
-                handleSelectRelease(chosen);
-              }
-            }}
+            onChange={handleSelectRelease}
           />
 
           {/* Changelog Toggle */}
@@ -416,7 +427,7 @@ export function DownloadTab({
           {/* Destination Path Preview */}
           <PanelSectionRow>
             <div style={{ fontSize: "10px", opacity: 0.7, padding: "2px 0", wordBreak: "break-all" }}>
-              Target: <code>~/Applications/{repoInput.split("/")[1] || repoInput}/</code>
+              Target: <code>~/Applications/{currentRepoName.split("/")[1] || currentRepoName}/</code>
             </div>
           </PanelSectionRow>
 
@@ -424,7 +435,7 @@ export function DownloadTab({
           <PanelSectionRow>
             <ButtonItem
               layout="below"
-              disabled={!selectedAsset || !!isDownloadingThisRepo}
+              disabled={!selectedAsset || !!isDownloading}
               onClick={handleStartDownload}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }}>
