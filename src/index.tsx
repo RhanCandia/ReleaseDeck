@@ -353,6 +353,32 @@ function ReleaseDeckContent() {
           fill: #ffffff !important;
         }
 
+        /* Collapsible App Card Header */
+        .rd-card-header {
+          background: transparent !important;
+          border: none !important;
+          border-radius: 6px !important;
+          transition: background 0.15s ease-in-out !important;
+          outline: none !important;
+        }
+        .rd-card-header:hover {
+          background: rgba(255, 255, 255, 0.05) !important;
+        }
+        .rd-card-header:focus,
+        .rd-card-header:focus-visible,
+        .rd-card-header.gpfocus {
+          background: #1a9fff !important;
+          box-shadow: 0 0 0 2px #ffffff, 0 0 10px rgba(26, 159, 255, 0.8) !important;
+          color: #ffffff !important;
+          outline: none !important;
+        }
+        .rd-card-header:focus *,
+        .rd-card-header:focus-visible *,
+        .rd-card-header.gpfocus * {
+          color: #ffffff !important;
+          fill: #ffffff !important;
+        }
+
         /* Generic Interactive Card Item (Repos, Versions) */
         .rd-card-item {
           background: rgba(255, 255, 255, 0.05) !important;
