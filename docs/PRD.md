@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## GitHub Release Downloader & Package Manager (Decky Plugin for Steam Deck)
+## ReleaseDeck — GitHub Release Downloader & Package Manager (Decky Plugin)
 
 **Document Version:** 0.1.0  
 **Target Platform:** SteamOS (Steam Deck - Gaming Mode & Desktop Mode)  

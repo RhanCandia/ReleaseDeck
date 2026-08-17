@@ -1,6 +1,6 @@
 # Development Plan & Actionable Task Breakdown
 
-**Project:** GitHub Release Downloader & Package Manager (Decky Plugin)  
+**Project:** ReleaseDeck — GitHub Release Downloader & Package Manager (Decky Plugin)  
 **SemVer Strategy:** `0.1.0-alpha` ➔ `0.1.0-beta` ➔ `0.1.0` (MVP Release) ➔ `0.2.0` (Enhancements) ➔ `1.0.0` (Stable Production)
 
 ---
