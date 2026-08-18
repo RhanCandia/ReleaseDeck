@@ -14,6 +14,9 @@ import {
   FaArrowUp,
   FaSteam,
   FaGithub,
+  FaGitlab,
+  FaGitAlt,
+  FaServer,
   FaBoxOpen,
   FaExclamationCircle,
   FaCheck,
@@ -22,7 +25,7 @@ import {
 } from "react-icons/fa";
 import { Api } from "../api";
 import { InstalledPackage, AppExecutableInfo } from "../types";
-import { formatBytes } from "../utils/format";
+import { formatBytes, parseRepoSpec } from "../utils/format";
 
 declare const SteamClient: any;
 
@@ -124,7 +127,7 @@ export function InstalledTab({
       }
 
       // Ensure proper game title from repo name (strip version numbers)
-      const cleanRepo = pkg.repository ? pkg.repository.split("/")[1] : "";
+      const cleanRepo = pkg.repository ? parseRepoSpec(pkg.repository).displayName : "";
       const displayName = cleanRepo || res.name || pkg.name || "Application";
       const exePath = res.exe_path;
       const startDir = res.install_path || "";
@@ -148,29 +151,25 @@ export function InstalledTab({
 
       // 3. Fallback to backend API if SteamClient JS was not available
       if (!added) {
-        const backendRes = await Api.addToSteam(pkg.id, selectedTargetExe);
-        if (backendRes.success) {
-          added = true;
-        } else {
+        const fallbackRes = await Api.addToSteam(pkg.id, selectedTargetExe);
+        if (!fallbackRes.success) {
           toaster.toast({
             title: "Add to Steam Failed",
-            body: backendRes.error || "Could not add shortcut.",
+            body: fallbackRes.error || "Could not register shortcut.",
           });
           return;
         }
       }
 
-      if (added) {
-        setAddedSteamIds((prev) => ({ ...prev, [pkg.id]: true }));
-        toaster.toast({
-          title: "Added to Steam",
-          body: `${displayName} added to your Steam Library!`,
-        });
-      }
+      setAddedSteamIds((prev) => ({ ...prev, [pkg.id]: true }));
+      toaster.toast({
+        title: "Added to Steam",
+        body: `${displayName} is now available in your Non-Steam library!`,
+      });
     } catch (e: any) {
       toaster.toast({
-        title: "Add to Steam Error",
-        body: e?.message || "Unexpected error while adding shortcut.",
+        title: "Steam Error",
+        body: e?.message || "Failed to add to Steam.",
       });
     } finally {
       setAddingSteamId(null);
@@ -239,61 +238,63 @@ export function InstalledTab({
   };
 
   return (
-    <PanelSection title={`Apps (${packages.length})`}>
+    <PanelSection title={`Installed Apps (${packages.length})`}>
       {/* Header Actions */}
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          disabled={isLoading || isCheckingUpdates}
-          onClick={handleCheckUpdates}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px" }}>
-            <FaSync className={isCheckingUpdates ? "spin-icon" : ""} />
-            {isCheckingUpdates ? "Checking..." : "Check for Updates"}
-          </div>
-        </ButtonItem>
-      </PanelSectionRow>
+      {packages.length > 0 && (
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
+            disabled={isLoading || isCheckingUpdates}
+            onClick={handleCheckUpdates}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
+              <FaSync className={isCheckingUpdates ? "spin-icon" : ""} size={11} />
+              <span>{isCheckingUpdates ? "Checking for Updates..." : "Check for Updates"}</span>
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+      )}
 
-      {/* Loading state */}
+      {/* Loading state indicator */}
       {isLoading && (
         <PanelSectionRow>
-          <div style={{ display: "flex", justifyContent: "center", padding: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "center", padding: "20px", width: "100%" }}>
             <Spinner />
           </div>
         </PanelSectionRow>
       )}
 
-      {/* Empty State */}
+      {/* Empty state prompt */}
       {!isLoading && packages.length === 0 && (
         <PanelSectionRow>
           <div
             style={{
-              padding: "16px",
+              padding: "24px 16px",
               textAlign: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.03)",
-              border: "1px dashed rgba(255, 255, 255, 0.15)",
-              borderRadius: "8px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "8px",
+              gap: "10px",
               width: "100%",
               boxSizing: "border-box",
+              backgroundColor: "rgba(255, 255, 255, 0.03)",
+              borderRadius: "8px",
+              border: "1px dashed rgba(255, 255, 255, 0.15)",
             }}
           >
-            <FaBoxOpen size={24} style={{ color: "#74c0fc", opacity: 0.7 }} />
-            <div style={{ fontSize: "12px", color: "#ffffff", fontWeight: "bold" }}>
-              No Applications Installed
+            <FaBoxOpen size={32} color="#74c0fc" />
+            <div style={{ fontSize: "13px", fontWeight: "bold", color: "#ffffff" }}>
+              No Packages Installed
             </div>
-            <div style={{ fontSize: "10px", color: "#9aa4af", maxWidth: "220px" }}>
-              Download packages and releases from your tracked GitHub repositories.
+            <div style={{ fontSize: "11px", color: "#9aa4af", maxWidth: "260px", lineHeight: "1.4" }}>
+              Download game releases and tools to run them directly or add them to Steam Game Mode.
             </div>
             <DialogButton
               className="rd-card-btn rd-card-btn-launch"
               onClick={onNavigateToDownload}
               style={{
                 marginTop: "4px",
-                padding: "6px 12px",
+                padding: "6px 14px",
                 fontSize: "11px",
                 fontWeight: "bold",
                 height: "auto",
@@ -362,84 +363,98 @@ export function InstalledTab({
                     }}
                   >
                     {/* Top Row: Repository Name + Version Badge + New Indicator + Chevron */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", width: "100%" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                          color: "#ffffff",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
-                        <FaGithub size={13} color="#74c0fc" style={{ flexShrink: 0 }} />
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {pkg.repository}
-                        </span>
-                      </div>
+                    {(() => {
+                      const info = parseRepoSpec(pkg.repository);
+                      let icon = <FaGithub size={13} color="#74c0fc" style={{ flexShrink: 0 }} />;
+                      if (info.providerType === "gitlab") {
+                        icon = <FaGitlab size={13} color="#fc6d26" style={{ flexShrink: 0 }} />;
+                      } else if (info.providerType === "forgejo") {
+                        icon = <FaGitAlt size={13} color="#f34f29" style={{ flexShrink: 0 }} />;
+                      } else if (info.providerType === "custom") {
+                        icon = <FaServer size={13} color="#a5d8ff" style={{ flexShrink: 0 }} />;
+                      }
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-                        {/* Version tag */}
-                        <span
-                          style={{
-                            fontSize: "9px",
-                            backgroundColor: "rgba(255, 255, 255, 0.12)",
-                            color: "#e2e8f0",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {pkg.installed_version}
-                        </span>
-
-                        {/* Update indicator */}
-                        {pkg.has_update && (
-                          <span
+                      return (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px", width: "100%" }}>
+                          <div
                             style={{
-                              fontSize: "8px",
-                              backgroundColor: "#f59f00",
-                              color: "#000000",
-                              padding: "1px 4px",
-                              borderRadius: "3px",
-                              fontWeight: "bold",
                               display: "flex",
                               alignItems: "center",
-                              gap: "2px",
+                              gap: "6px",
+                              fontSize: "12px",
+                              fontWeight: "bold",
+                              color: "#ffffff",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              flex: 1,
+                              minWidth: 0,
                             }}
                           >
-                            <FaExclamationCircle size={8} /> New
-                          </span>
-                        )}
+                            {icon}
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {pkg.name || info.displayName}
+                            </span>
+                          </div>
 
-                        {/* Animated Chevron */}
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: "16px",
-                            height: "16px",
-                            color: "#74c0fc",
-                            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                            transition: "transform 0.2s ease-in-out",
-                          }}
-                        >
-                          <FaChevronDown size={10} />
+                          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+                            {/* Version tag */}
+                            <span
+                              style={{
+                                fontSize: "9px",
+                                backgroundColor: "rgba(255, 255, 255, 0.12)",
+                                color: "#e2e8f0",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {pkg.installed_version}
+                            </span>
+
+                            {/* Update indicator */}
+                            {pkg.has_update && (
+                              <span
+                                style={{
+                                  fontSize: "8px",
+                                  backgroundColor: "#f59f00",
+                                  color: "#000000",
+                                  padding: "1px 4px",
+                                  borderRadius: "3px",
+                                  fontWeight: "bold",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "2px",
+                                }}
+                              >
+                                <FaExclamationCircle size={8} /> New
+                              </span>
+                            )}
+
+                            {/* Animated Chevron */}
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "16px",
+                                height: "16px",
+                                color: "#74c0fc",
+                                transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                                transition: "transform 0.2s ease-in-out",
+                              }}
+                            >
+                              <FaChevronDown size={10} />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
-                    {/* Subtext info: Asset & Size */}
+                    {/* Subtext info: Host & Asset & Size */}
                     <div style={{ fontSize: "10px", color: "#969ba3", display: "flex", justifyContent: "space-between", gap: "4px", width: "100%" }}>
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {pkg.installed_asset || pkg.name}
+                        {parseRepoSpec(pkg.repository).subtitle} • {pkg.installed_asset || pkg.name}
                       </span>
                       <span style={{ flexShrink: 0 }}>
                         {formatBytes(pkg.size_bytes)}

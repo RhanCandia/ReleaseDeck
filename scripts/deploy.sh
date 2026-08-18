@@ -66,15 +66,19 @@ if [ -z "$DECK_IP" ]; then
     fi
 fi
 
-PNPM_CMD="pnpm"
+PKG_CMD="pnpm"
 if ! command -v pnpm &>/dev/null; then
-    PNPM_CMD="npx -y pnpm"
+    if command -v npm &>/dev/null; then
+        PKG_CMD="npm"
+    else
+        PKG_CMD="npx -y pnpm"
+    fi
 fi
 
 echo -e "${CYAN}==> [1/4] Building ReleaseDeck bundle...${NC}"
 cd "$ROOT_DIR"
-$PNPM_CMD run type-check
-$PNPM_CMD run build
+$PKG_CMD run type-check
+$PKG_CMD run build
 
 echo -e "${CYAN}==> [2/4] Testing SSH connectivity to ${DECK_USER}@${DECK_IP}:${DECK_PORT}...${NC}"
 if ! ssh -p "$DECK_PORT" -o ConnectTimeout=5 -o BatchMode=no "${DECK_USER}@${DECK_IP}" "mkdir -p ${REMOTE_PLUGIN_DIR}"; then

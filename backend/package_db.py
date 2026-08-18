@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import re
 import shutil
 from typing import Dict, List, Optional, Any
 
@@ -98,7 +99,9 @@ class PackageDB:
         install_path: str
     ) -> Dict[str, Any]:
         packages = self._load_packages()
-        pkg_id = repo.lower().replace("/", "-")
+        # Create safe, unique ID from repo spec (handling URLs, domains, and owner/repo)
+        clean_repo_id = re.sub(r"^https?://", "", repo.lower())
+        pkg_id = re.sub(r"[^a-z0-9_\.-]", "-", clean_repo_id).strip("-")
         size = compute_directory_size(install_path)
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 

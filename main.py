@@ -9,7 +9,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import subprocess
 import decky
-from backend.github_api import GitHubClient, GitHubAPIError
+from backend.git_providers import (
+    UnifiedGitClient,
+    GitHubClient,
+    GitProviderError,
+    GitHubAPIError,
+    parse_repo_spec,
+)
 from backend.downloader import (
     Downloader,
     DownloadCancelledError,
@@ -22,15 +28,16 @@ from backend.package_db import PackageDB, DEFAULT_INSTALL_DIR
 from backend.updater import is_newer_version, find_matching_upgrade_asset
 
 def get_clean_app_name(pkg: Dict[str, Any]) -> str:
-    repo = pkg.get("repository", "")
-    if repo and "/" in repo:
-        repo_base = repo.split("/")[-1].strip()
-        if repo_base:
-            return repo_base
     name = pkg.get("name", "").strip()
     if name and not (name.startswith("v") and len(name) > 1 and name[1].isdigit()):
         return name
-    return repo or "Application"
+    repo = pkg.get("repository", "")
+    if repo:
+        try:
+            return parse_repo_spec(repo).display_name
+        except Exception:
+            return repo.strip("/").split("/")[-1]
+    return "Application"
 
 class Plugin:
     def __init__(self):
@@ -136,7 +143,10 @@ class Plugin:
         download_file_path = os.path.join(temp_dir, asset_name)
 
         # Determine target folder name (e.g. repo name or custom name)
-        repo_name = repo.split("/")[-1]
+        try:
+            repo_name = parse_repo_spec(repo).repo
+        except Exception:
+            repo_name = repo.strip("/").split("/")[-1]
         target_base = custom_install_dir or (
             self.package_db.get_settings().get("default_install_dir") if self.package_db else DEFAULT_INSTALL_DIR
         )

@@ -1,141 +1,81 @@
-# Development Plan & Actionable Task Breakdown
+# Development Plan & Architecture Roadmap
 
-**Project:** ReleaseDeck — GitHub Release Downloader & Package Manager (Decky Plugin)  
-**SemVer Strategy:** `0.1.0-alpha` ➔ `0.1.0-beta` ➔ `0.1.0` (MVP Release) ➔ `0.2.0` (Enhancements) ➔ `1.0.0` (Stable Production)
-
----
-
-## 1. Semantic Versioning Roadmap
-
-- **`v0.1.0-alpha.1`**: Core Python backend engine (GitHub API parsing, chunked async streaming download, archive extraction, permissions setup, JSON database CRUD).
-- **`v0.1.0-alpha.2`**: Frontend UI scaffolding (Tabbed layout, repository input, version selector dropdowns, asset list, download progress bars).
-- **`v0.1.0-beta.1`**: Installed packages management UI (List installed packages, calculate directory sizes, uninstall workflow).
-- **`v0.1.0-beta.2`**: Update detection and 1-click in-place upgrades.
-- **`v0.1.0` (MVP)**: Full end-to-end testing, error handling (rate limit 403s, network drops, sleep/wake resilience), documentation, and Decky store readiness.
-- **`v0.2.0`**: Optional Steam shortcut injection (`shortcuts.vdf` non-Steam game creation) and custom download directory selector.
-- **`v1.0.0`**: Production-stable release with community feedback incorporated.
+**Project:** ReleaseDeck — Universal Git Release Downloader & Package Manager (Decky Plugin)  
+**SemVer Strategy:** `0.1.0` (GitHub MVP) ➔ `0.1.1` (Steam Shortcuts & Polishing) ➔ `0.2.0` (Multi-Provider Git Forges) ➔ `1.0.0` (Stable)
 
 ---
 
-## 2. Phased Breakdown & Actionable Tasks
+## 1. Architecture Overview & Modules
 
 ```mermaid
 graph TD
-    P1[Phase 1: Project Scaffolding & Backend Engine] --> P2[Phase 2: Frontend UI & Download Flow]
-    P2 --> P3[Phase 3: Package Manager UI & CRUD]
-    P3 --> P4[Phase 4: Update Detection & 1-Click Upgrades]
-    P4 --> P5[Phase 5: Error Hardening, Testing & v0.1.0 Release]
+    UI[Decky Frontend - React 19 / TypeScript] -->|IPC callable / emit| Main[main.py Plugin Engine]
+    Main --> Providers[backend/git_providers.py - Multi-Provider Client]
+    Providers -->|Default / github.com| GH[GitHub API]
+    Providers -->|git.eden-emu.dev / Codeberg| FJ[Forgejo / Gitea API]
+    Providers -->|gitlab.com / Self-hosted| GL[GitLab API]
+    
+    Main --> Downloader[backend/downloader.py - Streamer & Extractor]
+    Main --> DB[backend/package_db.py - JSON DB]
+    Main --> Shortcuts[backend/shortcut_manager.py - Steam IPC]
+    Main --> Updater[backend/updater.py - Version Comparator]
 ```
 
----
+### Module Responsibilities
 
-### Phase 1: Project Scaffolding & Backend Engine (`v0.1.0-alpha.1`)
-
-Goal: Establish repo structure from Decky template, create the Python backend modules for GitHub API communication, file streaming, archive decompression, and local JSON metadata storage.
-
-- [ ] **Task 1.1: Initialize Decky Plugin Scaffolding**
-  - Clone/copy base setup from `decky-plugin-template`.
-  - Configure `plugin.json` (name, author, flags: `_root`, `debug`, api_version: 1).
-  - Configure `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, and `rollup.config.js`.
-  - Verify initial build with `pnpm run build`.
-
-- [ ] **Task 1.2: Implement GitHub API Client (`backend/github_api.py`)**
-  - Implement async method `fetch_releases(repo: str, token: str = None)` using `aiohttp` or `urllib`.
-  - Parse release tags, publish date, pre-release status, and attached assets list.
-  - Implement GitHub rate-limit error detection (`403 Forbidden` / `x-ratelimit-remaining`).
-
-- [ ] **Task 1.3: Implement Download & Extraction Service (`backend/downloader.py`)**
-  - Implement async chunked download streaming to `/tmp/` with real-time byte counters and speed calculation.
-  - Implement event emitter `emit("download_progress", { repo, percent, speed, downloaded, total })`.
-  - Implement extraction handlers for `.tar.gz`, `.zip`, `.tar.xz`, and raw `.AppImage` binaries.
-  - Apply `chmod +x` (`0o755`) to binaries, shell scripts, and AppImages.
-  - Ensure path sanitization to prevent Zip Slip vulnerabilities.
-
-- [ ] **Task 1.4: Implement Installed Packages Registry (`backend/package_db.py`)**
-  - Create JSON storage manager for `decky.DECKY_SETTINGS_DIR/packages.json`.
-  - Implement CRUD functions: `add_package()`, `get_packages()`, `update_package_version()`, `delete_package()`.
-  - Implement disk usage calculation (`shutil.disk_usage` / recursive folder size).
+1. **`backend/git_providers.py`**:
+   - `parse_repo_spec(input)`: Parses GitHub shorthand, custom domain URLs, and prefixes.
+   - `GitHubProvider`: Interacts with `api.github.com` and GitHub Enterprise.
+   - `GiteaForgejoProvider`: Interacts with Forgejo/Gitea instances (`/api/v1/repos/...`).
+   - `GitLabProvider`: Interacts with GitLab instances (`/api/v4/projects/...`).
+   - `UnifiedGitClient`: Unified client with auto-probing and schema normalization.
+2. **`backend/downloader.py`**:
+   - Chunked HTTP streaming with speed metrics and cancellation.
+   - Recursive archive extraction (`.tar.gz`, `.zip`, `.tar.xz`, `.AppImage`).
+   - Executable permission scanning (`chmod +x`).
+   - Zip Slip directory traversal protection.
+3. **`backend/package_db.py`**:
+   - JSON persistence for packages and settings.
+   - Folder size calculations.
+4. **`backend/shortcut_manager.py`**:
+   - Steam Non-Steam Game shortcut integration.
+5. **`backend/updater.py`**:
+   - SemVer and release tag comparison with asset matching.
 
 ---
 
-### Phase 2: Frontend UI & Download Flow (`v0.1.0-alpha.2`)
+## 2. Completed Milestones
 
-Goal: Build the React Quick Access Menu interface for searching repos, viewing release versions, selecting assets, and tracking live downloads.
-
-- [ ] **Task 2.1: Implement Tabbed Navigation & State Management**
-  - Implement tab switcher in `src/index.tsx`: `[📦 Installed Packages]` and `[📥 Download New]`.
-  - Create React state hooks for active repo, available releases, selected version, and download status.
-
-- [ ] **Task 2.2: Build Repository Input & Release Browser**
-  - Create text input component for `<owner>/<repo>`.
-  - Add quick-select dropdown for popular/saved repos.
-  - Render Version Dropdown with badges (`Latest`, `Pre-release`).
-  - Render expandable Release Notes / Changelog preview.
-
-- [ ] **Task 2.3: Build Asset Selection & Smart Platform Filter**
-  - Filter and tag assets with a `[Recommended]` badge for Linux-compatible files (`.tar.gz`, `.zip`, `.AppImage`, `x86_64`).
-  - Add download trigger button invoking backend `callable("start_download", ...)`.
-
-- [ ] **Task 2.4: Integrate Live Download Progress & Notifications**
-  - Hook `addEventListener("download_progress")` to update a visual `<ProgressBar>` in the QAM.
-  - Display current speed (e.g. `12.4 MB/s`) and percentage.
-  - Trigger `decky.toaster` notifications on download start, completion, or error.
+- [x] **v0.1.0 — Initial MVP**
+  - Core async downloader and extraction engine.
+  - GitHub release discovery and changelog rendering.
+  - Package database and installation tracking.
+- [x] **v0.1.1 — Gamepad UX & Steam Integration**
+  - Seamless 3-step navigation (`repos` ➔ `versions` ➔ `packages`).
+  - Automatic Non-Steam Game shortcut registration via `steamos-add-to-steam`.
+  - Executable discovery and selector.
+  - In-place updates and safe deletion safeguards.
+- [x] **v0.2.0 — Multi-Provider Git Forge Support**
+  - GitHub as zero-friction default.
+  - Support for custom-domain Git forges (Forgejo, Gitea, Codeberg, GitLab).
+  - Provider badging and host labeling in QAM.
+  - Upstream update checking across heterogeneous Git hosts.
 
 ---
 
-### Phase 3: Package Manager UI & Lifecycle (`v0.1.0-beta.1`)
+## 3. Testing & Verification Protocols
 
-Goal: Provide full management over installed packages in the QAM (inspection, uninstall, version rollbacks).
+```bash
+# 1. Run all Python unit tests
+python3 -m unittest discover -s tests -v
 
-- [ ] **Task 3.1: Build Installed Packages View**
-  - Query backend `callable("get_installed_packages")` on tab mount.
-  - Render accordion or card list displaying: package name, repo link, installed version, install date, and folder size.
+# 2. Run end-to-end simulation harness
+python3 tests/e2e_harness.py
 
-- [ ] **Task 3.2: Implement Package Deletion / Uninstall Flow**
-  - Add `[🗑 Uninstall]` button with confirmation prompt modal.
-  - Call backend `callable("uninstall_package", package_id)` to delete directory from `~/Applications/` and remove from `packages.json`.
+# 3. TypeScript check & Rollup frontend build
+npm run type-check
+npm run build
 
-- [ ] **Task 3.3: Implement Version Reinstall / Rollback Flow**
-  - Add `[Change Version]` button that opens the version selection modal for that repository and triggers a clean re-download.
-
----
-
-### Phase 4: Update Detection & 1-Click Upgrades (`v0.1.0-beta.2`)
-
-Goal: Enable automatic update checks against GitHub and smooth 1-click upgrades.
-
-- [ ] **Task 4.1: Implement Version Comparison Engine (`backend/updater.py`)**
-  - Implement backend `callable("check_all_updates")` to batch query `/releases/latest` for all installed packages.
-  - Parse semver tags (strip `v` prefix, compare versions).
-  - Update `hasUpdate: true` flag in `packages.json`.
-
-- [ ] **Task 4.2: Build Update UI Indicators**
-  - Display `[UPDATE AVAILABLE: vX.Y.Z]` badge next to outdated packages in the "Installed" tab.
-  - Add `[🔄 Check for Updates]` button in the tab header.
-
-- [ ] **Task 4.3: Implement 1-Click Upgrade Workflow**
-  - Add `[⬆ Update to vX.Y.Z]` action button.
-  - Automatically match the appropriate asset name based on the previous install.
-  - Perform safe in-place replacement and update `packages.json`.
-  - Send success toast upon completion.
-
----
-
-### Phase 5: Error Hardening, QA & v0.1.0 Release
-
-Goal: Verify edge cases on SteamOS Gaming Mode, optimize resource footprint, and tag `v0.1.0`.
-
-- [ ] **Task 5.1: Rate-Limit & Network Resilience**
-  - Add Settings modal to enter GitHub Personal Access Token.
-  - Handle rate-limit errors gracefully with informative UI alerts and PAT input prompt.
-  - Handle network drops and deck sleep/suspend without hanging backend threads.
-
-- [ ] **Task 5.2: Path & Security Auditing**
-  - Verify default path `~/Applications/` exists or is created automatically.
-  - Verify archive extractor prevents Zip Slip directory traversal.
-  - Ensure background CPU/RAM footprint remains negligible during gameplay.
-
-- [ ] **Task 5.3: Documentation & Release Packaging**
-  - Finalize `README.md` with installation instructions and screenshots.
-  - Create GitHub Actions workflow for building plugin release zip (`.zip` containing `dist/` and `main.py`).
-  - Tag `v0.1.0`.
+# 4. Deploy to physical Steam Deck over Wi-Fi
+bash scripts/deploy.sh -i <STEAM_DECK_IP>
+```

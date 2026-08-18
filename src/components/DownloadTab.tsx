@@ -23,6 +23,9 @@ import {
   FaRegCircle,
   FaRedo,
   FaGithub,
+  FaGitlab,
+  FaGitAlt,
+  FaServer,
   FaChevronRight,
   FaInfoCircle,
   FaCheckCircle,
@@ -31,7 +34,7 @@ import {
 } from "react-icons/fa";
 import { Api } from "../api";
 import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings, InstalledPackage } from "../types";
-import { formatBytes } from "../utils/format";
+import { formatBytes, parseRepoSpec } from "../utils/format";
 
 interface DownloadTabProps {
   settings: PluginSettings | null;
@@ -161,7 +164,7 @@ export function DownloadTab({
   };
 
   const handleStartDownload = async (repo: string, release: GitHubRelease, asset: GitHubAsset) => {
-    const displayName = repo.split("/")[1] || release.name || repo;
+    const displayName = parseRepoSpec(repo).displayName || release.name || repo;
     setIsInitiatingDownload(true);
     setLastInstalledName(null);
     setErrorMessage(null);
@@ -325,10 +328,21 @@ export function DownloadTab({
               style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", boxSizing: "border-box" }}
             >
               {pinnedRepos.map((repo) => {
-                const parts = repo.split("/");
-                const owner = parts.length > 1 ? parts[0] : "";
-                const repoName = parts.length > 1 ? parts[1] : repo;
+                const info = parseRepoSpec(repo);
                 const cachedCount = releasesCache[repo]?.length;
+
+                let icon = <FaGithub size={14} color="#74c0fc" />;
+                let iconBg = "rgba(26, 159, 255, 0.15)";
+                if (info.providerType === "gitlab") {
+                  icon = <FaGitlab size={14} color="#fc6d26" />;
+                  iconBg = "rgba(252, 109, 38, 0.15)";
+                } else if (info.providerType === "forgejo") {
+                  icon = <FaGitAlt size={14} color="#f34f29" />;
+                  iconBg = "rgba(243, 79, 41, 0.15)";
+                } else if (info.providerType === "custom") {
+                  icon = <FaServer size={14} color="#a5d8ff" />;
+                  iconBg = "rgba(165, 216, 255, 0.15)";
+                }
 
                 return (
                   <Focusable
@@ -343,24 +357,22 @@ export function DownloadTab({
                           width: "28px",
                           height: "28px",
                           borderRadius: "6px",
-                          backgroundColor: "rgba(26, 159, 255, 0.15)",
+                          backgroundColor: iconBg,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
                         }}
                       >
-                        <FaGithub size={14} color="#74c0fc" />
+                        {icon}
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, textAlign: "left" }}>
                         <div style={{ fontWeight: "bold", fontSize: "12px", color: "#ffffff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {repoName}
+                          {info.displayName}
                         </div>
-                        {owner && (
-                          <div style={{ fontSize: "10px", color: "#9aa4af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {owner}
-                          </div>
-                        )}
+                        <div style={{ fontSize: "10px", color: "#9aa4af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {info.subtitle}
+                        </div>
                       </div>
                     </div>
 
@@ -883,7 +895,7 @@ export function DownloadTab({
                 }}
               >
                 <FaFolder color="#74c0fc" style={{ flexShrink: 0 }} />
-                <span>Installs to: <code style={{ color: "#cbd5e1" }}>~/Applications/{repo.split("/")[1] || repo}/</code></span>
+                <span>Installs to: <code style={{ color: "#cbd5e1" }}>~/Applications/{parseRepoSpec(repo).repo}/</code></span>
               </div>
 
               {(() => {

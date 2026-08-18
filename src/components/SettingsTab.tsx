@@ -1,4 +1,5 @@
 import {
+  ButtonItem,
   DialogButton,
   Focusable,
   PanelSection,
@@ -13,7 +14,11 @@ import {
   FaTrash,
   FaFolder,
   FaGithub,
+  FaGitlab,
+  FaGitAlt,
+  FaServer,
   FaKey,
+  FaRedo,
   FaExclamationTriangle,
   FaCheckCircle,
   FaBug,
@@ -21,6 +26,9 @@ import {
 } from "react-icons/fa";
 import { Api } from "../api";
 import { PluginSettings } from "../types";
+import { parseRepoSpec } from "../utils/format";
+
+declare const SteamClient: any;
 
 interface SettingsTabProps {
   settings: PluginSettings | null;
@@ -36,6 +44,33 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [confirmRestart, setConfirmRestart] = useState<boolean>(false);
+
+  const handleRestartSteam = () => {
+    if (!confirmRestart) {
+      setConfirmRestart(true);
+      setTimeout(() => setConfirmRestart(false), 5000);
+      return;
+    }
+
+    try {
+      if (typeof SteamClient !== "undefined" && SteamClient.User?.StartRestart) {
+        SteamClient.User.StartRestart(false);
+      } else if ((window as any).SteamClient?.User?.StartRestart) {
+        (window as any).SteamClient.User.StartRestart(false);
+      } else {
+        toaster.toast({
+          title: "Restart Steam",
+          body: "SteamClient restart API is not available in current environment.",
+        });
+      }
+    } catch (e: any) {
+      toaster.toast({
+        title: "Restart Error",
+        body: e?.message || "Could not restart Steam client.",
+      });
+    }
+  };
 
   useEffect(() => {
     if (settings) {
@@ -62,11 +97,11 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
       const res = await Api.saveSettings(payload);
 
       if (res.success && res.settings) {
-        onSettingsSaved(res.settings);
+        onSettingsSaved(res.settings as PluginSettings);
         setSaveSuccess(true);
         toaster.toast({
-          title: "Release Deck",
-          body: "Settings saved successfully!",
+          title: "Settings Saved",
+          body: "Configuration updated successfully.",
         });
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
@@ -90,18 +125,17 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
     const trimmed = newRepo.trim();
 
     if (!trimmed) {
-      setAddError("Please enter a repository name.");
+      setAddError("Please enter a repository name or URL.");
       return;
     }
 
-    // Basic format check: owner/repo
-    const parts = trimmed.split("/").map((p) => p.trim()).filter(Boolean);
-    if (parts.length !== 2) {
-      setAddError("Must be formatted as: owner/repository");
+    const parsed = parseRepoSpec(trimmed);
+    if (!parsed.repo || !parsed.owner) {
+      setAddError("Invalid format. Use owner/repo (GitHub) or paste a full Git URL.");
       return;
     }
 
-    const cleanRepo = `${parts[0]}/${parts[1]}`;
+    const cleanRepo = parsed.canonical;
 
     if (pinnedRepos.some((r) => r.toLowerCase() === cleanRepo.toLowerCase())) {
       setAddError("This repository is already in your list.");
@@ -149,15 +183,15 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", boxSizing: "border-box" }}>
       {/* ============================================================ */}
-      {/* SECTION 1: TRACKED GITHUB REPOSITORIES                       */}
+      {/* SECTION 1: TRACKED REPOSITORIES (GITHUB & CUSTOM FORGES)    */}
       {/* ============================================================ */}
       <PanelSection title="Tracked Repositories">
         {/* Add Repository Input & Button */}
         <PanelSectionRow>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", boxSizing: "border-box" }}>
             <TextField
-              label="Add GitHub Repository"
-              description="Enter repository in owner/repo format"
+              label="Add Repository"
+              description="Defaults to GitHub for owner/repo. Paste any custom URL (Forgejo, Gitea, Codeberg, GitLab)"
               value={newRepo}
               onChange={(e) => {
                 setNewRepo(e.target.value);
@@ -258,6 +292,16 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
               >
                 {pinnedRepos.map((repo) => {
                   const isConfirming = deletingRepo === repo;
+                  const info = parseRepoSpec(repo);
+
+                  let icon = <FaGithub size={14} color="#74c0fc" style={{ flexShrink: 0 }} />;
+                  if (info.providerType === "gitlab") {
+                    icon = <FaGitlab size={14} color="#fc6d26" style={{ flexShrink: 0 }} />;
+                  } else if (info.providerType === "forgejo") {
+                    icon = <FaGitAlt size={14} color="#f34f29" style={{ flexShrink: 0 }} />;
+                  } else if (info.providerType === "custom") {
+                    icon = <FaServer size={14} color="#a5d8ff" style={{ flexShrink: 0 }} />;
+                  }
 
                   return (
                     <div
@@ -274,20 +318,32 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                           overflow: "hidden",
                         }}
                       >
-                        <FaGithub size={14} color="#74c0fc" style={{ flexShrink: 0 }} />
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: "500",
-                            color: "#ffffff",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            flex: 1,
-                          }}
-                        >
-                          {repo}
-                        </span>
+                        {icon}
+                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, overflow: "hidden" }}>
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              color: "#ffffff",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {info.displayName}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "10px",
+                              color: "#9aa4af",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {info.subtitle}
+                          </span>
+                        </div>
                       </div>
 
                       <DialogButton
@@ -404,7 +460,35 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
       </PanelSection>
 
       {/* ============================================================ */}
-      {/* SECTION 5: ABOUT RELEASE DECK                                */}
+      {/* SECTION 5: STEAM ACTIONS                                     */}
+      {/* ============================================================ */}
+      <PanelSection title="Steam Actions">
+        <PanelSectionRow>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", boxSizing: "border-box" }}>
+            <ButtonItem
+              layout="below"
+              onClick={handleRestartSteam}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "11px" }}>
+                <FaRedo className={confirmRestart ? "spin-icon" : ""} size={11} />
+                <span>{confirmRestart ? "Confirm Restart Steam?" : "Restart Steam Client"}</span>
+              </div>
+            </ButtonItem>
+            <div
+              style={{
+                fontSize: "10px",
+                color: "#9aa4af",
+                lineHeight: "1.3",
+              }}
+            >
+              Restarts Steam client to instantly refresh Non-Steam game library shortcuts.
+            </div>
+          </div>
+        </PanelSectionRow>
+      </PanelSection>
+
+      {/* ============================================================ */}
+      {/* SECTION 6: ABOUT RELEASE DECK                                */}
       {/* ============================================================ */}
       <PanelSection title="About Release Deck">
         <PanelSectionRow>
@@ -435,7 +519,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                     borderRadius: "10px",
                   }}
                 >
-                  v0.1.1
+                  v0.1.2
                 </span>
               </div>
               <span style={{ fontSize: "10.5px", color: "#9aa4af", lineHeight: "1.35" }}>
