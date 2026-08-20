@@ -1,0 +1,23 @@
+changelog:
+  exclude:
+    labels:
+      - "ignore-for-release"
+    authors:
+      - "*"
+  categories:
+    - title: "🚀 Features & Improvements"
+      labels:
+        - "feat"
+        - "enhancement"
+    - title: "🐛 Bug Fixes"
+      labels:
+        - "fix"
+        - "bug"
+    - title: "📚 Documentation"
+      labels:
+        - "docs"
+    - title: "🔧 Maintenance & Dependencies"
+      labels:
+        - "chore"
+        - "ci"
+        - "dependencies"
