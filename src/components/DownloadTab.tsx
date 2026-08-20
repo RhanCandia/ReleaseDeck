@@ -32,6 +32,7 @@ import {
   FaCheck,
   FaBox,
 } from "react-icons/fa";
+import { SiItchdotio } from "react-icons/si";
 import { Api } from "../api";
 import { GitHubRelease, GitHubAsset, DownloadProgress, PluginSettings, InstalledPackage } from "../types";
 import { formatBytes, parseRepoSpec } from "../utils/format";
@@ -339,6 +340,9 @@ export function DownloadTab({
                 } else if (info.providerType === "forgejo") {
                   icon = <FaGitAlt size={14} color="#f34f29" />;
                   iconBg = "rgba(243, 79, 41, 0.15)";
+                } else if (info.providerType === "itch") {
+                  icon = <SiItchdotio size={14} color="#fa5c5c" />;
+                  iconBg = "rgba(250, 92, 92, 0.15)";
                 } else if (info.providerType === "custom") {
                   icon = <FaServer size={14} color="#a5d8ff" />;
                   iconBg = "rgba(165, 216, 255, 0.15)";

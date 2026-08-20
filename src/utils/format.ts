@@ -21,7 +21,7 @@ export interface ParsedRepoInfo {
   host: string;
   owner: string;
   repo: string;
-  providerType: "github" | "forgejo" | "gitlab" | "custom";
+  providerType: "github" | "forgejo" | "gitlab" | "itch" | "custom";
   displayName: string;
   subtitle: string;
   canonical: string;
@@ -69,6 +69,18 @@ export function parseRepoSpec(rawInput: string): ParsedRepoInfo {
         subtitle: `Codeberg • ${ownerName}`,
         canonical: `codeberg.org/${ownerName}/${repoName}`,
       };
+    } else if (p === "itch" || p === "itchio") {
+      const creator = ownerName || parts[0] || "itch";
+      const game = parts.length > 1 ? parts[parts.length - 1] : repoName;
+      return {
+        host: `${creator}.itch.io`,
+        owner: creator,
+        repo: game,
+        providerType: "itch",
+        displayName: game,
+        subtitle: `itch.io • ${creator}`,
+        canonical: `${creator}.itch.io/${game}`,
+      };
     }
   }
 
@@ -93,6 +105,31 @@ export function parseRepoSpec(rawInput: string): ParsedRepoInfo {
   path = path.replace(/\.git$/, "").replace(/\/releases(\/tag\/.*)?$/, "").replace(/\/src\/branch\/.*$/, "");
   const parts = path.split("/").map((s) => s.trim()).filter(Boolean);
 
+  // Special handling for itch.io URLs: https://<creator>.itch.io/<game>
+  if (host.endsWith(".itch.io") || host === "itch.io") {
+    let ownerName = host.endsWith(".itch.io") && host !== "itch.io" ? host.slice(0, -8) : "";
+    let repoName = parts[0] || "game";
+    if (host === "itch.io") {
+      if (parts.length >= 2) {
+        ownerName = parts[0];
+        repoName = parts[1];
+      } else {
+        ownerName = "itch";
+        repoName = parts[0] || "game";
+      }
+    }
+    const cleanHost = `${ownerName}.itch.io`;
+    return {
+      host: cleanHost,
+      owner: ownerName,
+      repo: repoName,
+      providerType: "itch",
+      displayName: repoName,
+      subtitle: `itch.io • ${ownerName}`,
+      canonical: `${ownerName}.itch.io/${repoName}`,
+    };
+  }
+
   if (parts.length === 0) {
     return {
       host,
@@ -108,7 +145,7 @@ export function parseRepoSpec(rawInput: string): ParsedRepoInfo {
   const repoName = parts[parts.length - 1];
   const ownerName = parts.slice(0, -1).join("/") || "";
 
-  let providerType: "github" | "forgejo" | "gitlab" | "custom" = "custom";
+  let providerType: "github" | "forgejo" | "gitlab" | "itch" | "custom" = "custom";
   let subtitle = `${host} • ${ownerName}`;
 
   if (host === "github.com" || host.endsWith(".github.com")) {

@@ -165,7 +165,8 @@ class Plugin:
 
         try:
             decky.logger.info(f"Starting download for {repo} ({asset_name}) -> {download_file_path}")
-            await self.downloader.download_file(download_url, download_file_path, on_progress)
+            direct_download_url = await asyncio.to_thread(self.github_client.resolve_download_url, download_url)
+            await self.downloader.download_file(direct_download_url, download_file_path, on_progress)
 
             # Decompress / install
             await self._emit_event("download_progress", {

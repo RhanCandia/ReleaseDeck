@@ -91,7 +91,7 @@ def parse_repo_spec(raw_input: str) -> ParsedRepo:
     if not raw:
         raise GitProviderError("Repository identifier cannot be empty.")
 
-    # 1. Check for explicit provider prefix: e.g. "gitlab:owner/repo", "codeberg:owner/repo"
+    # 1. Check for explicit provider prefix: e.g. "gitlab:owner/repo", "codeberg:owner/repo", "itch:owner/game"
     if ":" in raw and not raw.startswith("http://") and not raw.startswith("https://"):
         prefix, rest = raw.split(":", 1)
         prefix = prefix.strip().lower()
@@ -108,6 +108,11 @@ def parse_repo_spec(raw_input: str) -> ParsedRepo:
                 return ParsedRepo(raw, "gitlab.com", owner, repo, "gitlab", repo, f"gitlab.com/{owner}/{repo}")
             elif prefix in ("fj", "forgejo", "gitea"):
                 return ParsedRepo(raw, "forgejo", owner, repo, "forgejo", repo, raw)
+            elif prefix in ("itch", "itchio"):
+                return ParsedRepo(raw, f"{owner}.itch.io", owner, repo, "itch", repo, f"{owner}.itch.io/{repo}")
+        elif len(parts) == 1 and prefix in ("itch", "itchio"):
+            repo = parts[0]
+            return ParsedRepo(raw, "itch.io", "itch", repo, "itch", repo, f"itch.io/{repo}")
 
     # 2. Check for URL or domain path
     if raw.startswith("http://") or raw.startswith("https://"):
@@ -115,7 +120,7 @@ def parse_repo_spec(raw_input: str) -> ParsedRepo:
         host = parsed.netloc.lower()
         path = parsed.path.strip("/")
     elif "/" in raw and ("." in raw.split("/")[0] or ":" in raw.split("/")[0]):
-        # e.g. git.eden-emu.dev/eden-emu/eden
+        # e.g. git.eden-emu.dev/eden-emu/eden or undreamedpanic.itch.io/gamma-emerald-ea
         first_segment, rest = raw.split("/", 1)
         host = first_segment.lower()
         path = rest.strip("/")
@@ -134,6 +139,22 @@ def parse_repo_spec(raw_input: str) -> ParsedRepo:
     path = re.sub(r"/src/branch/.*$", "", path)
 
     parts = [p for p in path.split("/") if p]
+
+    # Special handling for itch.io URLs: https://<creator>.itch.io/<game>
+    if host.endswith(".itch.io") or host == "itch.io":
+        if host.endswith(".itch.io") and host != "itch.io":
+            owner = host[:-8]  # Strip .itch.io
+            repo = parts[0] if parts else "game"
+        elif len(parts) >= 2:
+            owner, repo = parts[0], parts[1]
+            host = f"{owner}.itch.io"
+        elif len(parts) == 1:
+            owner, repo = "itch", parts[0]
+        else:
+            raise GitProviderError(f"Invalid itch.io game URL '{raw}'. Expected 'https://<creator>.itch.io/<game>'.")
+        canonical = f"{owner}.itch.io/{repo}"
+        return ParsedRepo(raw, host, owner, repo, "itch", repo, canonical)
+
     if len(parts) < 2:
         raise GitProviderError(f"Invalid repository URL path in '{raw}'. Expected at least owner and repo name.")
 
@@ -390,16 +411,228 @@ class GitLabProvider(BaseGitProvider):
             raise GitProviderError(f"Unexpected error querying GitLab: {str(e)}", provider="gitlab")
 
 
+class ItchProvider(BaseGitProvider):
+    """Handles itch.io game page scraping and temporary signed CDN download URL resolution for free games."""
+    def __init__(self):
+        import http.cookiejar
+        self.cj = http.cookiejar.CookieJar()
+        self.opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(self.cj),
+            urllib.request.HTTPSHandler(context=get_ssl_context())
+        )
+
+    def _get_headers(self, referer: Optional[str] = None) -> Dict[str, str]:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+        if referer:
+            headers["Referer"] = referer
+        return headers
+
+    def _parse_size_str(self, s: str) -> int:
+        s = s.strip().upper()
+        m = re.match(r"^([\d\.]+)\s*([KMGTP]?B?)$", s)
+        if not m:
+            return 0
+        val = float(m.group(1))
+        unit = m.group(2)
+        multipliers = {
+            "B": 1,
+            "KB": 1024,
+            "K": 1024,
+            "MB": 1024**2,
+            "M": 1024**2,
+            "GB": 1024**3,
+            "G": 1024**3,
+            "TB": 1024**4,
+            "T": 1024**4
+        }
+        return int(val * multipliers.get(unit, 1))
+
+    def fetch_releases(self, parsed: ParsedRepo, token: Optional[str] = None) -> List[Dict[str, Any]]:
+        page_url = f"https://{parsed.host}/{parsed.repo}"
+        req = urllib.request.Request(page_url, headers=self._get_headers())
+
+        try:
+            try:
+                response = self.opener.open(req, timeout=15)
+            except urllib.error.URLError as url_err:
+                if "CERTIFICATE_VERIFY_FAILED" in str(url_err):
+                    unverified_ctx = ssl._create_unverified_context()
+                    unverified_opener = urllib.request.build_opener(
+                        urllib.request.HTTPCookieProcessor(self.cj),
+                        urllib.request.HTTPSHandler(context=unverified_ctx)
+                    )
+                    response = unverified_opener.open(req, timeout=15)
+                else:
+                    raise url_err
+
+            with response:
+                html = response.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise GitProviderError(f"Game '{parsed.canonical_spec}' not found on itch.io.", status_code=404, provider="itch")
+            else:
+                raise GitProviderError(f"itch.io Error: {e.code} {e.reason}", status_code=e.code, provider="itch")
+        except GitProviderError:
+            raise
+        except Exception as e:
+            raise GitProviderError(f"Failed to fetch game from itch.io: {str(e)}", provider="itch")
+
+        # Parse title
+        title_m = re.search(r"<h1[^>]*class=[\x22\x27]game_title[^\x22\x27]*[\x22\x27][^>]*>(.*?)</h1>", html, re.DOTALL)
+        title = title_m.group(1).strip() if title_m else parsed.repo
+
+        # Parse description / changelog
+        desc_m = re.search(r"<div[^>]*class=[\x22\x27]formatted_description[^\x22\x27]*[\x22\x27][^>]*>(.*?)</div>", html, re.DOTALL)
+        body = ""
+        if desc_m:
+            body = re.sub(r"<br\s*/?>", "\n", desc_m.group(1))
+            body = re.sub(r"<[^>]+>", "", body).strip()
+            lines = [l.strip() for l in body.splitlines() if l.strip()]
+            body = "\n".join(lines[:20])
+
+        # Parse uploads
+        # Split by upload widgets
+        upload_chunks = re.split(r"<div[^>]*class=[\x22\x27]upload(?:\s+[^\x22\x27]*)?[\x22\x27]", html)[1:]
+
+        assets = []
+        latest_version = "Latest"
+        latest_date = ""
+
+        for chunk in upload_chunks:
+            # Keep up to next major widget
+            clean_chunk = re.split(r"<div id=[\x22\x27]game_comments|<div class=[\x22\x27]view_game_page|<div class=[\x22\x27]base_widget", chunk)[0]
+            up_id_m = re.search(r"data-upload_id=[\x22\x27](\d+)[\x22\x27]", clean_chunk)
+            if not up_id_m:
+                continue
+            upload_id = int(up_id_m.group(1))
+
+            name_m = re.search(r"<strong[^>]*class=[\x22\x27][^\x22\x27]*name[^\x22\x27]*[\x22\x27][^>]*>(.*?)</strong>", clean_chunk, re.DOTALL)
+            name = ""
+            if name_m:
+                title_attr_m = re.search(r"title=[\x22\x27]([^\x22\x27]+)[\x22\x27]", name_m.group(0))
+                if title_attr_m:
+                    name = title_attr_m.group(1).strip()
+                else:
+                    name = re.sub(r"<[^>]+>", "", name_m.group(1)).strip()
+            if not name:
+                name = f"upload_{upload_id}"
+
+            size_m = re.search(r"<span[^>]*class=[\x22\x27][^\x22\x27]*file_size[^\x22\x27]*[\x22\x27][^>]*>(.*?)</span>", clean_chunk, re.DOTALL)
+            size_raw = re.sub(r"<[^>]+>", "", size_m.group(1)).strip() if size_m else ""
+            size_bytes = self._parse_size_str(size_raw)
+
+            ver_m = re.search(r"<span[^>]*class=[\x22\x27][^\x22\x27]*version_name[^\x22\x27]*[\x22\x27][^>]*>(.*?)</span>", clean_chunk, re.DOTALL)
+            ver_name = re.sub(r"<[^>]+>", "", ver_m.group(1)).strip() if ver_m else ""
+            if ver_name and latest_version == "Latest":
+                latest_version = ver_name
+
+            date_m = re.search(r"<abbr[^>]*title=[\x22\x27]([^\x22\x27]+)[\x22\x27]", clean_chunk)
+            date_str = date_m.group(1) if date_m else ""
+            if date_str and not latest_date:
+                latest_date = date_str
+
+            plat_m = re.findall(r"title=[\x22\x27]Download for ([^\x22\x27]+)[\x22\x27]", clean_chunk)
+            platforms = [p.lower() for p in plat_m]
+
+            is_rec = False
+            if "linux" in platforms:
+                is_rec = True
+            elif "windows" in platforms or "macos" in platforms or "android" in platforms:
+                is_rec = False
+            else:
+                is_rec = is_linux_recommended(name)
+
+            download_url = f"{page_url}/file/{upload_id}"
+
+            assets.append({
+                "id": upload_id,
+                "name": name,
+                "size": size_bytes,
+                "download_url": download_url,
+                "content_type": "application/octet-stream",
+                "download_count": 0,
+                "is_recommended": is_rec
+            })
+
+        if not assets:
+            raise GitProviderError(
+                f"No free downloadable files found on itch.io page '{parsed.canonical_spec}'. "
+                "Paid games or games requiring login are not currently downloadable without an active session.",
+                provider="itch"
+            )
+
+        if not any(a["is_recommended"] for a in assets):
+            assets[0]["is_recommended"] = True
+
+        assets.sort(key=lambda a: (not a["is_recommended"], a["name"]))
+
+        return [{
+            "id": 1,
+            "tag_name": latest_version,
+            "name": f"{title} ({latest_version})",
+            "prerelease": False,
+            "draft": False,
+            "published_at": latest_date,
+            "body": body,
+            "html_url": page_url,
+            "assets": assets
+        }]
+
+    def resolve_download_url(self, file_url: str) -> str:
+        """Resolve itch.io /file/<upload_id> link into a temporary signed direct CDN download URL."""
+        parsed = urllib.parse.urlparse(file_url)
+        page_url = f"https://{parsed.netloc}{parsed.path.rsplit('/file/', 1)[0]}"
+
+        # 1. Fetch game page to establish session cookies and fresh CSRF
+        req = urllib.request.Request(page_url, headers=self._get_headers())
+        with self.opener.open(req, timeout=15) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+
+        csrf_m = (
+            re.search(r"[\x22\x27]csrf_token[\x22\x27]\s*:\s*[\x22\x27]([^\x22\x27]+)[\x22\x27]", html) or
+            re.search(r"name=[\x22\x27]csrf_token[\x22\x27]\s+value=[\x22\x27]([^\x22\x27]+)[\x22\x27]", html) or
+            re.search(r"csrf_token\s*[:=]\s*[\x22\x27]([^\x22\x27]+)[\x22\x27]", html) or
+            re.search(r"I\.set_csrf_token\([\x22\x27]([^\x22\x27]+)[\x22\x27]\)", html)
+        )
+        csrf_token = csrf_m.group(1) if csrf_m else ""
+
+        # 2. POST to file endpoint
+        post_data = urllib.parse.urlencode({"csrf_token": csrf_token}).encode("utf-8")
+        post_headers = {
+            **self._get_headers(referer=page_url),
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+        post_req = urllib.request.Request(file_url, data=post_data, headers=post_headers)
+
+        with self.opener.open(post_req, timeout=15) as post_resp:
+            data = json.loads(post_resp.read().decode("utf-8"))
+            cdn_url = data.get("url")
+            if not cdn_url:
+                raise GitProviderError("itch.io did not return a valid download URL.", provider="itch")
+            return cdn_url
+
+
 class UnifiedGitClient:
-    """Unified client orchestrating multiple Git forges with GitHub as the default."""
+    """Unified client orchestrating multiple Git forges and itch.io with GitHub as the default."""
     def __init__(self, github_token: Optional[str] = None):
         self.github_token = github_token.strip() if github_token else None
         self.github_provider = GitHubProvider()
         self.forgejo_provider = GiteaForgejoProvider()
         self.gitlab_provider = GitLabProvider()
+        self.itch_provider = ItchProvider()
 
     def set_token(self, token: Optional[str]) -> None:
         self.github_token = token.strip() if token else None
+
+    def resolve_download_url(self, url: str) -> str:
+        """Resolves dynamic signed URLs (e.g. itch.io temporary CDN links) if applicable."""
+        if ".itch.io" in url and "/file/" in url:
+            return self.itch_provider.resolve_download_url(url)
+        return url
 
     def _sync_fetch_releases(self, repo_spec: str) -> List[Dict[str, Any]]:
         parsed = parse_repo_spec(repo_spec)
@@ -410,6 +643,8 @@ class UnifiedGitClient:
             return self.forgejo_provider.fetch_releases(parsed, self.github_token)
         elif parsed.provider_type == "gitlab":
             return self.gitlab_provider.fetch_releases(parsed, self.github_token)
+        elif parsed.provider_type == "itch":
+            return self.itch_provider.fetch_releases(parsed, self.github_token)
         else:
             # Auto-probe custom domain: Try Forgejo/Gitea first, then GitLab, then GitHub API
             last_err = None
