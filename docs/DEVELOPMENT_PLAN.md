@@ -12,6 +12,7 @@ graph TD
     UI[Decky Frontend - React 19 / TypeScript] -->|IPC callable / emit| Main[main.py Plugin Engine]
     Main --> Providers[backend/git_providers.py - Multi-Provider Client]
     Providers -->|Default / github.com| GH[GitHub API]
+    Providers -->|itch.io free games| ITCH[itch.io Scraper & CDN Resolver]
     Providers -->|git.eden-emu.dev / Codeberg| FJ[Forgejo / Gitea API]
     Providers -->|gitlab.com / Self-hosted| GL[GitLab API]
     
@@ -24,11 +25,12 @@ graph TD
 ### Module Responsibilities
 
 1. **`backend/git_providers.py`**:
-   - `parse_repo_spec(input)`: Parses GitHub shorthand, custom domain URLs, and prefixes.
+   - `parse_repo_spec(input)`: Parses GitHub shorthand, itch.io URLs/prefixes, custom domain URLs, and prefixes.
    - `GitHubProvider`: Interacts with `api.github.com` and GitHub Enterprise.
+   - `ItchProvider`: Scrapes itch.io game pages and resolves signed Cloudflare R2 / S3 CDN download links dynamically via `POST /file/<upload_id>`.
    - `GiteaForgejoProvider`: Interacts with Forgejo/Gitea instances (`/api/v1/repos/...`).
    - `GitLabProvider`: Interacts with GitLab instances (`/api/v4/projects/...`).
-   - `UnifiedGitClient`: Unified client with auto-probing and schema normalization.
+   - `UnifiedGitClient`: Unified client with auto-probing, schema normalization, and dynamic signed URL resolution.
 2. **`backend/downloader.py`**:
    - Chunked HTTP streaming with speed metrics and cancellation.
    - Recursive archive extraction (`.tar.gz`, `.zip`, `.tar.xz`, `.AppImage`).
@@ -60,6 +62,11 @@ graph TD
   - Support for custom-domain Git forges (Forgejo, Gitea, Codeberg, GitLab).
   - Provider badging and host labeling in QAM.
   - Upstream update checking across heterogeneous Git hosts.
+- [x] **v0.3.0 — itch.io Free Games Support**
+  - Native itch.io URL parsing (`https://<creator>.itch.io/<game>`, `itch:<creator>/<game>`).
+  - Direct metadata scraping (titles, version tags, release notes, file uploads).
+  - Dynamic temporary signed CDN URL negotiation at download time (`POST /file/<upload_id>`).
+  - Branded itch.io icons (`SiItchdotio`) and platform recommendation sorting.
 
 ---
 
