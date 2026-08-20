@@ -5,18 +5,18 @@ changelog:
     authors:
       - "*"
   categories:
-    - title: "🚀 Features & Improvements"
+    - title: "Features and Improvements"
       labels:
         - "feat"
         - "enhancement"
-    - title: "🐛 Bug Fixes"
+    - title: "Bug Fixes"
       labels:
         - "fix"
         - "bug"
-    - title: "📚 Documentation"
+    - title: "Documentation"
       labels:
         - "docs"
-    - title: "🔧 Maintenance & Dependencies"
+    - title: "Maintenance and Dependencies"
       labels:
         - "chore"
         - "ci"
