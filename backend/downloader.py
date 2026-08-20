@@ -10,6 +10,11 @@ import urllib.request
 import urllib.error
 from typing import Callable, Optional, List, Dict, Any
 
+try:
+    from .version import get_plugin_version
+except ImportError:
+    from version import get_plugin_version
+
 CHUNK_SIZE = 64 * 1024  # 64 KB chunks
 
 def get_ssl_context() -> ssl.SSLContext:
@@ -200,7 +205,7 @@ class Downloader:
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
         ctx = get_ssl_context()
         headers = {
-            "User-Agent": "SideDeck-SteamDeck-Plugin/0.2.0",
+            "User-Agent": f"SideDeck-SteamDeck-Plugin/{get_plugin_version()}",
             "Accept": "application/octet-stream, */*",
         }
         req = urllib.request.Request(url, headers=headers)

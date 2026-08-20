@@ -64,4 +64,5 @@ export interface PluginSettings {
   github_token: string;
   default_install_dir: string;
   pinned_repos: string[];
+  plugin_version?: string;
 }

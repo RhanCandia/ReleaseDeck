@@ -19,9 +19,20 @@ from backend.git_providers import (
     GitHubProvider,
     GiteaForgejoProvider,
     GitLabProvider,
+    USER_AGENT,
 )
+from backend.version import get_plugin_version
 
 class TestGitProviders(unittest.IsolatedAsyncioTestCase):
+    def test_dynamic_plugin_version_and_env_override(self):
+        ver = get_plugin_version()
+        self.assertTrue(len(ver) > 0)
+        self.assertIn(ver, USER_AGENT)
+        
+        # Test environment variable override
+        with patch.dict(os.environ, {"PLUGIN_VERSION": "9.9.9"}):
+            self.assertEqual(get_plugin_version(), "9.9.9")
+
     def test_parse_repo_spec_github_default(self):
         # Shorthand should default to GitHub
         parsed = parse_repo_spec("shadps4-emu/shadPS4")
@@ -237,7 +248,7 @@ class TestGitProviders(unittest.IsolatedAsyncioTestCase):
             self.assertIn("r2.cloudflarestorage.com", cdn_url)
 
             # Test actual binary download stream
-            req = urllib.request.Request(cdn_url, headers={"User-Agent": "SideDeck-SteamDeck-Plugin/0.2.0"})
+            req = urllib.request.Request(cdn_url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 self.assertEqual(resp.status, 200)
                 self.assertEqual(resp.headers.get("Content-Type"), "application/octet-stream")

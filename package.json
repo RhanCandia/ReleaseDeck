@@ -1,6 +1,6 @@
 {
   "name": "decky-sidedeck",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Download, manage, and update itch.io games, GitHub release packages, and standalone game ports directly in SteamOS Gaming Mode.",
   "type": "module",
   "scripts": {

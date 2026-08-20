@@ -9,7 +9,12 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
-USER_AGENT = "SideDeck-SteamDeck-Plugin/0.2.0"
+try:
+    from .version import get_plugin_version
+except ImportError:
+    from version import get_plugin_version
+
+USER_AGENT = f"SideDeck-SteamDeck-Plugin/{get_plugin_version()}"
 
 LINUX_MATCH_KEYWORDS = [
     "linux", "x86_64", "x64", "amd64", "appimage", "steamdeck",

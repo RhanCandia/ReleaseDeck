@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 ## Side Deck — Universal Non-Steam Sideloading, Game Port & Package Manager (Decky Plugin)
 
-**Document Version:** 0.2.0  
+**Document Version:** 0.2.1  
 **Target Platform:** SteamOS (Steam Deck - Gaming Mode & Desktop Mode)  
 **Plugin Framework:** Decky Loader (React 19 Frontend + Python 3 Asyncio Backend)
 

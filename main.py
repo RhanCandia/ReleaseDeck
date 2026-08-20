@@ -26,6 +26,7 @@ from backend.downloader import (
 )
 from backend.package_db import PackageDB, DEFAULT_INSTALL_DIR
 from backend.updater import is_newer_version, find_matching_upgrade_asset
+from backend.version import get_plugin_version
 
 def get_clean_app_name(pkg: Dict[str, Any]) -> str:
     name = pkg.get("name", "").strip()
@@ -446,8 +447,10 @@ class Plugin:
     async def get_settings(self) -> Dict[str, Any]:
         """Retrieve plugin settings."""
         if not self.package_db:
-            return {}
-        return self.package_db.get_settings()
+            return {"plugin_version": get_plugin_version()}
+        settings = self.package_db.get_settings()
+        settings["plugin_version"] = get_plugin_version()
+        return settings
 
     async def save_settings(self, settings: Dict[str, Any]) -> Dict[str, Any]:
         """Update and save plugin settings."""

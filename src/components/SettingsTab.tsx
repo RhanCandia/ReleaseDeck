@@ -522,14 +522,14 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                     borderRadius: "10px",
                   }}
                 >
-                  v0.2.0
+                  v{settings?.plugin_version || "0.2.1"}
                 </span>
               </div>
               <span style={{ fontSize: "10.5px", color: "#9aa4af", lineHeight: "1.35" }}>
-                GitHub release package downloader & game manager for SteamOS Gaming Mode.
+                itch.io, GitHub, & game port sideloading manager for SteamOS Gaming Mode.
               </span>
               <span style={{ fontSize: "9.5px", color: "#6c7a89", marginTop: "2px" }}>
-                By Team Release Deck
+                By Team Side Deck
               </span>
             </div>
 
