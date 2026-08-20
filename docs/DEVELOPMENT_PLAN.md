@@ -1,6 +1,6 @@
 # Development Plan & Architecture Roadmap
 
-**Project:** ReleaseDeck — Universal Git Release Downloader & Package Manager (Decky Plugin)  
+**Project:** Side Deck — Universal Non-Steam Sideloading, Game Port & Package Manager (Decky Plugin)  
 **SemVer Strategy:** `0.1.0` (GitHub MVP) ➔ `0.1.1` (Steam Shortcuts & Polishing) ➔ `0.2.0` (Multi-Provider Git Forges) ➔ `1.0.0` (Stable)
 
 ---

@@ -33,12 +33,12 @@ class TestGitProviders(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(parsed.display_name, "shadPS4")
 
     def test_parse_repo_spec_github_url(self):
-        parsed = parse_repo_spec("https://github.com/RhanCandia/ReleaseDeck")
+        parsed = parse_repo_spec("https://github.com/RhanCandia/decky-sidedeck")
         self.assertEqual(parsed.host, "github.com")
         self.assertEqual(parsed.owner, "RhanCandia")
-        self.assertEqual(parsed.repo, "ReleaseDeck")
+        self.assertEqual(parsed.repo, "decky-sidedeck")
         self.assertEqual(parsed.provider_type, "github")
-        self.assertEqual(parsed.canonical_spec, "RhanCandia/ReleaseDeck")
+        self.assertEqual(parsed.canonical_spec, "RhanCandia/decky-sidedeck")
 
     def test_parse_repo_spec_forgejo_custom_domain(self):
         # Full URL
@@ -237,7 +237,7 @@ class TestGitProviders(unittest.IsolatedAsyncioTestCase):
             self.assertIn("r2.cloudflarestorage.com", cdn_url)
 
             # Test actual binary download stream
-            req = urllib.request.Request(cdn_url, headers={"User-Agent": "ReleaseDeck-SteamDeck-Plugin/0.2.0"})
+            req = urllib.request.Request(cdn_url, headers={"User-Agent": "SideDeck-SteamDeck-Plugin/0.2.0"})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 self.assertEqual(resp.status, 200)
                 self.assertEqual(resp.headers.get("Content-Type"), "application/octet-stream")

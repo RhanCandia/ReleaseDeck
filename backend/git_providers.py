@@ -9,7 +9,7 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
-USER_AGENT = "ReleaseDeck-SteamDeck-Plugin/0.2.0"
+USER_AGENT = "SideDeck-SteamDeck-Plugin/0.2.0"
 
 LINUX_MATCH_KEYWORDS = [
     "linux", "x86_64", "x64", "amd64", "appimage", "steamdeck",
@@ -28,16 +28,15 @@ def get_ssl_context() -> ssl.SSLContext:
         "/etc/ssl/ca-bundle.pem",
         "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
     ]
+    for path in ca_paths:
+        if os.path.exists(path):
+            try:
+                ctx = ssl.create_default_context(cafile=path)
+                return ctx
+            except Exception:
+                pass
     try:
-        ctx = ssl.create_default_context()
-        for ca_path in ca_paths:
-            if os.path.exists(ca_path):
-                try:
-                    ctx.load_verify_locations(cafile=ca_path)
-                    return ctx
-                except Exception:
-                    pass
-        return ctx
+        return ssl.create_default_context()
     except Exception:
         return ssl._create_unverified_context()
 
@@ -82,7 +81,7 @@ class ParsedRepo:
 def parse_repo_spec(raw_input: str) -> ParsedRepo:
     """
     Parses various repository spec formats:
-    - Shorthand (defaults to GitHub): "shadps4-emu/shadPS4", "RhanCandia/ReleaseDeck"
+    - Shorthand (defaults to GitHub): "shadps4-emu/shadPS4", "RhanCandia/decky-sidedeck"
     - Prefixed shorthand: "gitlab:inkscape/inkscape", "codeberg:forgejo/forgejo"
     - Full URL: "https://git.eden-emu.dev/eden-emu/eden", "https://github.com/owner/repo"
     - Domain path: "git.eden-emu.dev/eden-emu/eden", "codeberg.org/owner/repo"

@@ -1,7 +1,7 @@
 {
-  "name": "releasedeck",
+  "name": "decky-sidedeck",
   "version": "0.2.0",
-  "description": "Download, manage, and update GitHub release packages directly in SteamOS Gaming Mode.",
+  "description": "Download, manage, and update itch.io games, GitHub release packages, and standalone game ports directly in SteamOS Gaming Mode.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
@@ -15,12 +15,14 @@
     "decky",
     "plugin",
     "steam-deck",
+    "itch",
     "github",
     "releases",
     "packages",
+    "sideload",
     "steamos"
   ],
-  "author": "ReleaseDeck Team",
+  "author": "Side Deck Team",
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@decky/rollup": "^1.0.2",

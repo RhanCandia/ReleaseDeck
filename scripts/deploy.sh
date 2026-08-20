@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 DECK_IP="${DECK_IP:-}"
 DECK_USER="${DECK_USER:-deck}"
 DECK_PORT="${DECK_PORT:-22}"
-REMOTE_PLUGIN_DIR="~/homebrew/plugins/ReleaseDeck"
+REMOTE_PLUGIN_DIR="~/homebrew/plugins/SideDeck"
 
 # Parse CLI arguments
 while [[ $# -gt 0 ]]; do
@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --help|-h)
-      echo "ReleaseDeck Deployment Script"
+      echo "Side Deck Deployment Script"
       echo ""
       echo "Usage: pnpm run deploy -- [options]"
       echo ""
@@ -75,7 +75,7 @@ if ! command -v pnpm &>/dev/null; then
     fi
 fi
 
-echo -e "${CYAN}==> [1/4] Building ReleaseDeck bundle...${NC}"
+echo -e "${CYAN}==> [1/4] Building Side Deck bundle...${NC}"
 cd "$ROOT_DIR"
 $PKG_CMD run type-check
 $PKG_CMD run build
@@ -113,8 +113,8 @@ else
         "${DECK_USER}@${DECK_IP}:${REMOTE_PLUGIN_DIR}/"
 fi
 
-echo -e "${CYAN}==> [4/4] Reloading ReleaseDeck on Steam Deck...${NC}"
-ssh -p "$DECK_PORT" "${DECK_USER}@${DECK_IP}" "pkill -f 'ReleaseDeck/main.py' 2>/dev/null || true; sudo systemctl restart plugin_loader 2>/dev/null || true" || true
+echo -e "${CYAN}==> [4/4] Reloading Side Deck on Steam Deck...${NC}"
+ssh -p "$DECK_PORT" "${DECK_USER}@${DECK_IP}" "pkill -f 'SideDeck/main.py' 2>/dev/null || true; sudo systemctl restart plugin_loader 2>/dev/null || true" || true
 
-echo -e "${GREEN}✓ ReleaseDeck successfully deployed to your Steam Deck!${NC}"
-echo -e "Open the Quick Access Menu (${CYAN}...${NC} button) in Gaming Mode to see ReleaseDeck."
+echo -e "${GREEN}✓ Side Deck successfully deployed to your Steam Deck!${NC}"
+echo -e "Open the Quick Access Menu (${CYAN}...${NC} button) in Gaming Mode to see Side Deck."

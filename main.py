@@ -78,7 +78,17 @@ class Plugin:
     async def _main(self):
         """Executed on Decky plugin startup."""
         self.loop = asyncio.get_event_loop()
-        settings_dir = getattr(decky, "DECKY_SETTINGS_DIR", os.path.expanduser("~/.config/ReleaseDeck"))
+        legacy_dir = os.path.expanduser("~/.config/ReleaseDeck")
+        default_dir = os.path.expanduser("~/.config/SideDeck")
+        if os.path.exists(legacy_dir) and not os.path.exists(default_dir):
+            try:
+                import shutil
+                shutil.move(legacy_dir, default_dir)
+                decky.logger.info("Migrated legacy ReleaseDeck configuration to SideDeck.")
+            except Exception as e:
+                decky.logger.warning(f"Could not migrate legacy config dir: {e}")
+
+        settings_dir = getattr(decky, "DECKY_SETTINGS_DIR", default_dir)
         self.package_db = PackageDB(settings_dir)
         
         # Load token if present
@@ -87,17 +97,17 @@ class Plugin:
         if token:
             self.github_client.set_token(token)
             
-        decky.logger.info("ReleaseDeck plugin initialized successfully.")
+        decky.logger.info("Side Deck plugin initialized successfully.")
 
     async def _unload(self):
         """Executed when plugin is stopped."""
         if self.is_downloading:
             self.downloader.cancel()
-        decky.logger.info("ReleaseDeck plugin unloaded.")
+        decky.logger.info("Side Deck plugin unloaded.")
 
     async def _uninstall(self):
         """Executed when plugin is uninstalled from Decky."""
-        decky.logger.info("ReleaseDeck plugin uninstalled.")
+        decky.logger.info("Side Deck plugin uninstalled.")
 
     # --- Frontend Callable API Methods ---
 
@@ -139,7 +149,7 @@ class Plugin:
         self.current_download_status = init_progress
         self._sync_emit_event("download_progress", init_progress)
 
-        temp_dir = tempfile.mkdtemp(prefix="releasedeck_")
+        temp_dir = tempfile.mkdtemp(prefix="sidedeck_")
         download_file_path = os.path.join(temp_dir, asset_name)
 
         # Determine target folder name (e.g. repo name or custom name)

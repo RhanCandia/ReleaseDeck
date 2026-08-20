@@ -23,7 +23,7 @@ class TestShortcutManager(unittest.TestCase):
                 "AppName": "SymphonyRecomp",
                 "Exe": '"/home/deck/Applications/SymphonyRecomp/run.sh"',
                 "StartDir": "/home/deck/Applications/SymphonyRecomp/",
-                "tags": {"0": "ReleaseDeck"}
+                "tags": {"0": "SideDeck"}
             }
         }
         serialized = serialize_binary_vdf(sample)

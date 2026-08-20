@@ -1,4 +1,4 @@
-"""End-to-End Simulation Test for ReleaseDeck."""
+"""End-to-End Simulation Test for Side Deck."""
 import asyncio
 import os
 import sys
@@ -12,11 +12,11 @@ import tests.mock_decky  # noqa: F401
 from main import Plugin
 
 async def run_e2e():
-    print("=== Starting ReleaseDeck E2E Simulation ===")
+    print("=== Starting Side Deck E2E Simulation ===")
     plugin = Plugin()
     await plugin._main()
 
-    test_home = tempfile.mkdtemp(prefix="releasedeck_e2e_home_")
+    test_home = tempfile.mkdtemp(prefix="sidedeck_e2e_home_")
     test_install_dir = os.path.join(test_home, "Applications")
 
     # Mock download file locally by monkey-patching downloader

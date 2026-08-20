@@ -17,7 +17,7 @@ import { SettingsTab } from "./components/SettingsTab";
 
 type TabKey = "apps" | "download" | "settings";
 
-function ReleaseDeckContent() {
+function SideDeckContent() {
   const [activeTab, setActiveTab] = useState<TabKey>("apps");
   const [installedPackages, setInstalledPackages] = useState<InstalledPackage[]>([]);
   const [isLoadingInstalled, setIsLoadingInstalled] = useState<boolean>(false);
@@ -533,8 +533,8 @@ function ReleaseDeckContent() {
 
 export default definePlugin(() => {
   return {
-    name: "Release Deck",
+    name: "Side Deck",
     icon: <FaGithub />,
-    content: <ReleaseDeckContent />,
+    content: <SideDeckContent />,
   };
 });

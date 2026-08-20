@@ -9,13 +9,13 @@ if ! command -v pnpm &>/dev/null; then
     PNPM_CMD="npx -y pnpm"
 fi
 
-echo "==> Building ReleaseDeck frontend bundle..."
+echo "==> Building Side Deck frontend bundle..."
 cd "$ROOT_DIR"
 $PNPM_CMD run type-check
 $PNPM_CMD run build
 
 echo "==> Staging plugin files..."
-STAGING_DIR="$ROOT_DIR/build/ReleaseDeck"
+STAGING_DIR="$ROOT_DIR/build/SideDeck"
 rm -rf "$ROOT_DIR/build"
 mkdir -p "$STAGING_DIR"
 
@@ -30,10 +30,10 @@ if [ -d "$ROOT_DIR/assets" ]; then
     cp -r "$ROOT_DIR/assets" "$STAGING_DIR/"
 fi
 
-echo "==> Creating ReleaseDeck.zip..."
+echo "==> Creating SideDeck.zip..."
 cd "$ROOT_DIR/build"
-zip -r "$ROOT_DIR/ReleaseDeck.zip" ReleaseDeck/
+zip -r "$ROOT_DIR/SideDeck.zip" SideDeck/
 cd "$ROOT_DIR"
 rm -rf "$ROOT_DIR/build"
 
-echo "✓ Successfully created $ROOT_DIR/ReleaseDeck.zip"
+echo "✓ Successfully created $ROOT_DIR/SideDeck.zip"

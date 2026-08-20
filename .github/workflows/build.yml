@@ -1,4 +1,4 @@
-name: Build & ReleaseDeck Package
+name: Build & Package Side Deck
 
 on:
   push:
@@ -51,25 +51,25 @@ jobs:
 
       - name: Create Decky Plugin Zip Package
         run: |
-          mkdir -p release_staging/ReleaseDeck
-          cp -r dist main.py backend plugin.json package.json README.md LICENSE assets release_staging/ReleaseDeck/ 2>/dev/null || true
+          mkdir -p release_staging/SideDeck
+          cp -r dist main.py backend plugin.json package.json README.md LICENSE assets release_staging/SideDeck/ 2>/dev/null || true
           cd release_staging
-          zip -r ../ReleaseDeck.zip ReleaseDeck
+          zip -r ../SideDeck.zip SideDeck
           cd ..
           rm -rf release_staging
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ReleaseDeck-Plugin
-          path: ReleaseDeck.zip
+          name: SideDeck-Plugin
+          path: SideDeck.zip
           retention-days: 14
 
       - name: Create GitHub Release (On Tag)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: ReleaseDeck.zip
+          files: SideDeck.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

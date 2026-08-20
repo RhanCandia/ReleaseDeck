@@ -1,11 +1,11 @@
 {
-  "name": "Release Deck",
-  "author": "Team Release Deck",
+  "name": "Side Deck",
+  "author": "Team Side Deck",
   "flags": ["_root"],
   "api_version": 1,
   "publish": {
-    "tags": ["github", "releases", "packages", "downloader", "manager", "tools", "games"],
-    "description": "Download, manage, and update GitHub release packages and game ports directly in SteamOS Gaming Mode.",
-    "image": "https://raw.githubusercontent.com/RhanCandia/ReleaseDeck/main/assets/preview.png"
+    "tags": ["itch", "github", "releases", "packages", "downloader", "manager", "tools", "games", "sideload"],
+    "description": "Download, manage, and update itch.io games, GitHub release packages, and standalone game ports directly in SteamOS Gaming Mode.",
+    "image": "https://raw.githubusercontent.com/RhanCandia/decky-sidedeck/main/assets/preview.png"
   }
 }

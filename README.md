@@ -1,24 +1,24 @@
-# Release Deck
+# Side Deck
 
 <div align="center">
-  <p><strong>Universal Git Release Downloader & Game Package Manager for Steam Deck (SteamOS Gaming Mode)</strong></p>
+  <p><strong>Universal Non-Steam Sideloading, Game Port & Package Manager for Steam Deck (SteamOS Gaming Mode)</strong></p>
   <p>
-    <a href="https://github.com/RhanCandia/ReleaseDeck/releases"><img src="https://img.shields.io/github/v/release/RhanCandia/ReleaseDeck?color=1a9fff&style=flat-square" alt="GitHub release" /></a>
+    <a href="https://github.com/RhanCandia/decky-sidedeck/releases"><img src="https://img.shields.io/github/v/release/RhanCandia/decky-sidedeck?color=1a9fff&style=flat-square" alt="GitHub release" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-BSD--3--Clause-blue.svg?style=flat-square" alt="License" /></a>
     <a href="https://deckbrew.xyz"><img src="https://img.shields.io/badge/Decky%20Loader-Plugin-orange?style=flat-square" alt="Decky Plugin" /></a>
     <a href="https://ko-fi.com/rhncnd"><img src="https://img.shields.io/badge/Ko--fi-Support%20Me-ff5e5b?style=flat-square&logo=ko-fi&logoColor=white" alt="Support on Ko-fi" /></a>
   </p>
   <br />
-  <img src="assets/preview.png" alt="Release Deck Banner" width="100%" style="border-radius: 8px;" />
+  <img src="assets/preview.png" alt="Side Deck Banner" width="100%" style="border-radius: 8px;" />
 </div>
 
 ---
 
 ## Overview
 
-**Release Deck** is a Decky Loader plugin for SteamOS that lets you install, update, and manage open-source games, standalone emulators, source ports, PC decompilations, and free indie games directly from the **Quick Access Menu (`...` button)** in **Gaming Mode**.
+**Side Deck** is a Decky Loader plugin for SteamOS that lets you sideload, update, and manage open-source games, standalone emulators, source ports, PC decompilations, and free indie games directly from the **Quick Access Menu (`...` button)** in **Gaming Mode**.
 
-Instead of switching to Desktop Mode, downloading archives through a web browser, manually extracting folders, and configuring Non-Steam shortcuts in Steam, Release Deck automates the entire process in Gaming Mode with complete controller support.
+Instead of switching to Desktop Mode, downloading archives through a web browser, manually extracting folders, and configuring Non-Steam shortcuts in Steam, Side Deck automates the entire process in Gaming Mode with complete controller support.
 
 ### Supported Sources
 - **GitHub (Default)**: Enter `owner/repo` shorthand (e.g. [`shadps4-emu/shadPS4`](https://github.com/shadps4-emu/shadPS4)).
@@ -27,9 +27,9 @@ Instead of switching to Desktop Mode, downloading archives through a web browser
 
 ---
 
-## What Release Deck Automates
+## What Side Deck Automates
 
-| Task | Without Release Deck (Manual) | With Release Deck |
+| Task | Without Side Deck (Manual) | With Side Deck |
 | :--- | :--- | :--- |
 | **Download Releases** | Switch to Desktop Mode, open browser, navigate to releases page, download archive file. | Browse versions, changelogs, and assets directly from the Quick Access Menu in Gaming Mode. |
 | **Archive Extraction** | Open Ark/terminal, extract `.tar.gz`, `.zip`, or `.tar.xz`, handle nested folders. | Automatically streams, extracts, and organizes files into `~/Applications/<AppName>/`. |
@@ -41,12 +41,12 @@ Instead of switching to Desktop Mode, downloading archives through a web browser
 
 ## End-User Usage Guide
 
-Release Deck is designed for 100% controller and D-pad navigation directly in Gaming Mode.
+Side Deck is designed for 100% controller and D-pad navigation directly in Gaming Mode.
 
-### Step 1: Open Release Deck
+### Step 1: Open Side Deck
 1. Press the **Quick Access Menu button (`...`)** on your Steam Deck.
 2. Select the **Decky Loader icon** (plug symbol).
-3. Select **Release Deck**.
+3. Select **Side Deck**.
 
 ### Step 2: Add Tracked Repositories or Games
 1. Navigate to the **Settings** tab.
@@ -54,7 +54,7 @@ Release Deck is designed for 100% controller and D-pad navigation directly in Ga
    - **GitHub**: Type `owner/repo` (e.g. [`PCSX2/pcsx2`](https://github.com/PCSX2/pcsx2), [`HarbourMasters/Shipwright`](https://github.com/HarbourMasters/Shipwright), [`diasurgical/devilutionX`](https://github.com/diasurgical/devilutionX)).
    - **itch.io**: Paste the game URL (e.g. [`https://undreamedpanic.itch.io/gamma-emerald-ea`](https://undreamedpanic.itch.io/gamma-emerald-ea)).
    - **Custom Git Forges**: Paste the forge URL (e.g. [`https://git.eden-emu.dev/eden-emu/eden`](https://git.eden-emu.dev/eden-emu/eden), [`https://codeberg.org/forgejo/forgejo`](https://codeberg.org/forgejo/forgejo), or [`https://gitlab.com/...`](https://gitlab.com)).
-3. Click **Add to Tracked List**. Release Deck automatically detects the source type and displays a provider badge.
+3. Click **Add to Tracked List**. Side Deck automatically detects the source type and displays a provider badge.
 
 *Optional*: If you frequently download from GitHub, you can add a **GitHub Personal Access Token (PAT)** in Settings to increase your API rate limit to 5,000 requests/hour.
 
@@ -63,20 +63,20 @@ Release Deck is designed for 100% controller and D-pad navigation directly in Ga
 2. Select your tracked repository or game from the list.
 3. Select a release version or tag to inspect release notes and available packages.
 4. Select the asset you want to download. Recommended Linux and Steam Deck packages (`.AppImage`, `steamdeck`, `x86_64`, `.tar.gz`) are highlighted automatically.
-5. Click **Download & Install**. Release Deck downloads the package in the background with real-time speed metrics and automatically extracts it to `~/Applications/<AppName>/`.
+5. Click **Download & Install**. Side Deck downloads the package in the background with real-time speed metrics and automatically extracts it to `~/Applications/<AppName>/`.
 
 ### Step 4: Configure Executable and Add to Steam
 1. Switch to the **Apps** tab to view your installed software.
 2. Expand the installed application card.
 3. Use the **Executable Selector** to choose the primary runnable binary (supports Linux native binaries, AppImages, shell scripts, and Windows `.exe` files for Proton).
-4. Click **Add to Steam**. Release Deck registers the game shortcut in your Steam Library.
+4. Click **Add to Steam**. Side Deck registers the game shortcut in your Steam Library.
 5. Launch and play the game directly from your Steam library.
 
-*Note for Steam Library refresh*: If your new shortcut does not appear immediately in your Steam Library, go to Settings in Release Deck and click **Restart Steam Client** to reload shortcuts without rebooting the Deck.
+*Note for Steam Library refresh*: If your new shortcut does not appear immediately in your Steam Library, go to Settings in Side Deck and click **Restart Steam Client** to reload shortcuts without rebooting the Deck.
 
 ### Step 5: Check for Updates and Upgrade
 1. Open the **Apps** tab at any time.
-2. Release Deck compares your installed version against the latest upstream release tags across GitHub, itch.io, and custom forges.
+2. Side Deck compares your installed version against the latest upstream release tags across GitHub, itch.io, and custom forges.
 3. If a new version is available, an **Update Available** badge appears with the latest version tag.
 4. Click **Update** to download the latest release and update your installation in-place while preserving your existing save files and configurations.
 
@@ -84,7 +84,7 @@ Release Deck is designed for 100% controller and D-pad navigation directly in Ga
 
 ## Supported Software Categories and Examples
 
-Release Deck can manage a wide variety of standalone software distributions:
+Side Deck can manage a wide variety of standalone software distributions:
 
 | Category | Supported Examples | Description |
 | :--- | :--- | :--- |
@@ -94,7 +94,7 @@ Release Deck can manage a wide variety of standalone software distributions:
 | **Indie Games (itch.io)** | • [`https://undreamedpanic.itch.io/gamma-emerald-ea`](https://undreamedpanic.itch.io/gamma-emerald-ea) (Gamma Emerald - EA)<br>• Free standalone games and early access builds | Download and play free itch.io game builds directly on SteamOS. |
 | **Homebrew Utilities & Launchers** | • [`Heroic-Games-Launcher/HeroicGamesLauncher`](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher) (Heroic Games Launcher)<br>• [`moonlight-stream/moonlight-qt`](https://github.com/moonlight-stream/moonlight-qt) (Moonlight Game Streaming)<br>• [`streetpea/chiaki-ng`](https://github.com/streetpea/chiaki-ng) (Chiaki-ng PlayStation Remote Play)<br>• [`DavidoTek/ProtonUp-Qt`](https://github.com/DavidoTek/ProtonUp-Qt) (ProtonUp-Qt) | Manage standalone AppImages and game streaming tools directly within Game Mode. |
 
-*Asset Preservation Note*: For source ports and decompilations that require original game data files or ROMs, place your asset files into `~/Applications/<AppName>/` once. Future updates performed via Release Deck replace the game binaries while preserving your asset and save files.
+*Asset Preservation Note*: For source ports and decompilations that require original game data files or ROMs, place your asset files into `~/Applications/<AppName>/` once. Future updates performed via Side Deck replace the game binaries while preserving your asset and save files.
 
 ---
 
@@ -160,8 +160,8 @@ Release Deck can manage a wide variety of standalone software distributions:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/RhanCandia/ReleaseDeck.git
-cd ReleaseDeck
+git clone https://github.com/RhanCandia/decky-sidedeck.git
+cd decky-sidedeck
 ```
 
 ### 2. Install Dependencies & Build
@@ -185,7 +185,7 @@ npm run package
 
 ## Deployment to Steam Deck
 
-Release Deck includes a one-command deployment script to push builds directly to your Steam Deck over Wi-Fi/SSH:
+Side Deck includes a one-command deployment script to push builds directly to your Steam Deck over Wi-Fi/SSH:
 
 ```bash
 # Deploy to Steam Deck over local network via SSH
@@ -201,7 +201,7 @@ bash scripts/deploy.sh -i <STEAM_DECK_IP>
 
 ## Support
 
-If you find Release Deck useful and want to support its ongoing development, consider supporting via Ko-fi:
+If you find Side Deck useful and want to support its ongoing development, consider supporting via Ko-fi:
 
 <div align="center">
   <a href="https://ko-fi.com/rhncnd">
@@ -213,7 +213,7 @@ If you find Release Deck useful and want to support its ongoing development, con
 
 ## Acknowledgments & Citations
 
-Release Deck was inspired and guided by the following projects:
+Side Deck was inspired and guided by the following projects:
 - [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader)
 - [Valve SteamOS](https://store.steampowered.com/steamos)
 - [Eden Nintendo Switch Emulator](https://git.eden-emu.dev/eden-emu/eden)
@@ -227,7 +227,7 @@ Release Deck was inspired and guided by the following projects:
 
 In the spirit of transparency and open-source integrity:
 
-- **Human-Led Direction & Architecture**: All feature roadmaps, system architecture, user experience design, security considerations, and core logic for **Release Deck** are conceived, designed, and decided by the project author ([@RhanCandia](https://github.com/RhanCandia)).
+- **Human-Led Direction & Architecture**: All feature roadmaps, system architecture, user experience design, security considerations, and core logic for **Side Deck** are conceived, designed, and decided by the project author ([@RhanCandia](https://github.com/RhanCandia)).
 - **AI as an Assistive Tool**: Generative AI tools and AI coding assistants are utilized strictly as collaborative pair-programming aids—assisting with boilerplate scaffolding, refactoring exploration, code formatting, and documentation drafting.
 - **Human Verification & Ownership**: No AI tool acts autonomously in this codebase. Every line of code, backend endpoint, React component, shell script, and release asset is manually inspected, refined, tested on real Steam Deck hardware / SteamOS Gaming Mode, and maintained under full human oversight and responsibility.
 

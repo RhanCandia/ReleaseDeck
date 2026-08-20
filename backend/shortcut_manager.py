@@ -168,7 +168,7 @@ def add_or_update_shortcut(app_name: str, exe_path: str, start_dir: Optional[str
             "LastPlayTime": 0,
             "FlatpakAppID": "",
             "sortas": "",
-            "tags": {"0": "ReleaseDeck"}
+            "tags": {"0": "SideDeck"}
         }
         
         try:

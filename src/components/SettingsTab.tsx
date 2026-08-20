@@ -545,7 +545,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
             >
               <DialogButton
                 className="rd-card-btn"
-                onClick={() => openExternalUrl("https://github.com/RhanCandia/ReleaseDeck")}
+                onClick={() => openExternalUrl("https://github.com/RhanCandia/decky-sidedeck")}
                 style={{
                   flex: 1,
                   padding: "7px 8px",
@@ -562,7 +562,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
 
               <DialogButton
                 className="rd-card-btn"
-                onClick={() => openExternalUrl("https://github.com/RhanCandia/ReleaseDeck/issues")}
+                onClick={() => openExternalUrl("https://github.com/RhanCandia/decky-sidedeck/issues")}
                 style={{
                   flex: 1,
                   padding: "7px 8px",
@@ -579,7 +579,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
 
               <DialogButton
                 className="rd-card-btn"
-                onClick={() => openExternalUrl("https://github.com/RhanCandia/ReleaseDeck/releases")}
+                onClick={() => openExternalUrl("https://github.com/RhanCandia/decky-sidedeck/releases")}
                 style={{
                   flex: 1,
                   padding: "7px 8px",

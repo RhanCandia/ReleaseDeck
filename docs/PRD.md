@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## ReleaseDeck — Universal Git Release Downloader & Package Manager (Decky Plugin)
+## Side Deck — Universal Non-Steam Sideloading, Game Port & Package Manager (Decky Plugin)
 
 **Document Version:** 0.2.0  
 **Target Platform:** SteamOS (Steam Deck - Gaming Mode & Desktop Mode)  
