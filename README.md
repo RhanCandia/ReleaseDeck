@@ -220,3 +220,14 @@ Release Deck was inspired and guided by the following projects:
 - [Ship of Harkinian / Harbour Masters](https://github.com/HarbourMasters/Shipwright)
 - [2 Ship 2 Harkinian](https://github.com/HarbourMasters/2ship2harkinian)
 - [Zelda 64: Recompiled](https://github.com/Zelda64Recomp/Zelda64Recomp)
+
+---
+
+## AI Usage & Transparency Disclaimer
+
+In the spirit of transparency and open-source integrity:
+
+- **Human-Led Direction & Architecture**: All feature roadmaps, system architecture, user experience design, security considerations, and core logic for **Release Deck** are conceived, designed, and decided by the project author ([@RhanCandia](https://github.com/RhanCandia)).
+- **AI as an Assistive Tool**: Generative AI tools and AI coding assistants are utilized strictly as collaborative pair-programming aids—assisting with boilerplate scaffolding, refactoring exploration, code formatting, and documentation drafting.
+- **Human Verification & Ownership**: No AI tool acts autonomously in this codebase. Every line of code, backend endpoint, React component, shell script, and release asset is manually inspected, refined, tested on real Steam Deck hardware / SteamOS Gaming Mode, and maintained under full human oversight and responsibility.
+
