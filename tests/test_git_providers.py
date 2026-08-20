@@ -237,7 +237,7 @@ class TestGitProviders(unittest.IsolatedAsyncioTestCase):
             self.assertIn("r2.cloudflarestorage.com", cdn_url)
 
             # Test actual binary download stream
-            req = urllib.request.Request(cdn_url, headers={"User-Agent": "ReleaseDeck-SteamDeck-Plugin/0.1.2"})
+            req = urllib.request.Request(cdn_url, headers={"User-Agent": "ReleaseDeck-SteamDeck-Plugin/0.2.0"})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 self.assertEqual(resp.status, 200)
                 self.assertEqual(resp.headers.get("Content-Type"), "application/octet-stream")

@@ -1,6 +1,6 @@
 {
   "name": "releasedeck",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Download, manage, and update GitHub release packages directly in SteamOS Gaming Mode.",
   "type": "module",
   "scripts": {

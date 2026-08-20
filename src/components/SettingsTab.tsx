@@ -522,7 +522,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                     borderRadius: "10px",
                   }}
                 >
-                  v0.1.2
+                  v0.2.0
                 </span>
               </div>
               <span style={{ fontSize: "10.5px", color: "#9aa4af", lineHeight: "1.35" }}>

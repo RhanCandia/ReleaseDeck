@@ -9,7 +9,7 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
-USER_AGENT = "ReleaseDeck-SteamDeck-Plugin/0.1.2"
+USER_AGENT = "ReleaseDeck-SteamDeck-Plugin/0.2.0"
 
 LINUX_MATCH_KEYWORDS = [
     "linux", "x86_64", "x64", "amd64", "appimage", "steamdeck",
