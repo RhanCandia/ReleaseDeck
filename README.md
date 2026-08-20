@@ -21,9 +21,9 @@
 Instead of switching to Desktop Mode, downloading archives through a web browser, manually extracting folders, and configuring Non-Steam shortcuts in Steam, Release Deck automates the entire process in Gaming Mode with complete controller support.
 
 ### Supported Sources
-- **GitHub (Default)**: Enter `owner/repo` shorthand (e.g. `shadps4-emu/shadPS4`).
-- **itch.io**: Paste free game URLs (e.g. `https://undreamedpanic.itch.io/gamma-emerald-ea`).
-- **Custom Git Forges & Self-Hosted Instances**: Paste full URLs or domain paths for Forgejo, Gitea, Codeberg, and GitLab (e.g. `https://git.eden-emu.dev/eden-emu/eden` or `https://codeberg.org/forgejo/forgejo`).
+- **GitHub (Default)**: Enter `owner/repo` shorthand (e.g. [`shadps4-emu/shadPS4`](https://github.com/shadps4-emu/shadPS4)).
+- **itch.io**: Paste free game URLs (e.g. [`https://undreamedpanic.itch.io/gamma-emerald-ea`](https://undreamedpanic.itch.io/gamma-emerald-ea)).
+- **Custom Git Forges & Self-Hosted Instances**: Paste full URLs or domain paths for Forgejo, Gitea, Codeberg, and GitLab (e.g. [`https://git.eden-emu.dev/eden-emu/eden`](https://git.eden-emu.dev/eden-emu/eden) or [`https://codeberg.org/forgejo/forgejo`](https://codeberg.org/forgejo/forgejo)).
 
 ---
 
@@ -51,9 +51,9 @@ Release Deck is designed for 100% controller and D-pad navigation directly in Ga
 ### Step 2: Add Tracked Repositories or Games
 1. Navigate to the **Settings** tab.
 2. Under **Tracked Repositories**, enter your repository or game source:
-   - **GitHub**: Type `owner/repo` (e.g. `PCSX2/pcsx2`, `HarbourMasters/Shipwright`, `diasurgical/devilutionX`).
-   - **itch.io**: Paste the game URL (e.g. `https://undreamedpanic.itch.io/gamma-emerald-ea` or `undreamedpanic.itch.io/gamma-emerald-ea`).
-   - **Custom Git Forges**: Paste the forge URL (e.g. `https://git.eden-emu.dev/eden-emu/eden`, `https://codeberg.org/...`, or `https://gitlab.com/...`).
+   - **GitHub**: Type `owner/repo` (e.g. [`PCSX2/pcsx2`](https://github.com/PCSX2/pcsx2), [`HarbourMasters/Shipwright`](https://github.com/HarbourMasters/Shipwright), [`diasurgical/devilutionX`](https://github.com/diasurgical/devilutionX)).
+   - **itch.io**: Paste the game URL (e.g. [`https://undreamedpanic.itch.io/gamma-emerald-ea`](https://undreamedpanic.itch.io/gamma-emerald-ea)).
+   - **Custom Git Forges**: Paste the forge URL (e.g. [`https://git.eden-emu.dev/eden-emu/eden`](https://git.eden-emu.dev/eden-emu/eden), [`https://codeberg.org/forgejo/forgejo`](https://codeberg.org/forgejo/forgejo), or [`https://gitlab.com/...`](https://gitlab.com)).
 3. Click **Add to Tracked List**. Release Deck automatically detects the source type and displays a provider badge.
 
 *Optional*: If you frequently download from GitHub, you can add a **GitHub Personal Access Token (PAT)** in Settings to increase your API rate limit to 5,000 requests/hour.
@@ -88,11 +88,11 @@ Release Deck can manage a wide variety of standalone software distributions:
 
 | Category | Supported Examples | Description |
 | :--- | :--- | :--- |
-| **Standalone Emulators & Nightlies** | `https://git.eden-emu.dev/eden-emu/eden`<br>`PCSX2/pcsx2`<br>`shadps4-emu/shadPS4`<br>`stenzek/duckstation`<br>`hrydgard/ppsspp`<br>`Lime3DS/Lime3DS`<br>`melonDS-emu/melonDS`<br>`flyinghead/flycast` | Stay on cutting-edge nightly or stable releases with instant in-place updates from GitHub or custom-hosted forges. |
-| **Static Recompilations & Decompilations** | `HarbourMasters/Shipwright` (Ship of Harkinian - Ocarina of Time PC Port)<br>`HarbourMasters/2ship2harkinian` (2 Ship 2 Harkinian - Majora's Mask PC Port)<br>`Zelda64Recomp/Zelda64Recomp` (Majora's Mask Recomp)<br>`open-goal/jak-project` (Jak and Daxter PC Port)<br>`Rubberduckycooly/Sonic-Mania-Decompilation`<br>`alexbatalov/fallout1-ce` (Fallout 1 Community Edition)<br>`alexbatalov/fallout2-ce` (Fallout 2 Community Edition) | Download standalone native Linux binaries and AppImages with high framerates and Deck controller support without manual desktop extraction. |
-| **Source Ports & Classic PC Ports** | `diasurgical/devilutionX` (Diablo 1 + Hellfire)<br>`ZDoom/gzdoom` (Doom, Heretic, Hexen source port)<br>`STJr/SRB2` (Sonic Robo Blast 2)<br>`CorsixTH/CorsixTH` (Theme Hospital engine)<br>`k4zmu2a/SpaceCadetPinball` (3D Pinball for Windows) | Grab Linux-native packages and play classic PC titles seamlessly on SteamOS. |
-| **Indie Games (itch.io)** | `https://undreamedpanic.itch.io/gamma-emerald-ea`<br>Free standalone games and early access builds | Download and play free itch.io game builds directly on SteamOS. |
-| **Homebrew Utilities & Launchers** | `Heroic-Games-Launcher/HeroicGamesLauncher`<br>`moonlight-stream/moonlight-qt`<br>`streetpea/chiaki-ng`<br>`DavidoTek/ProtonUp-Qt` | Manage standalone AppImages and game streaming tools directly within Game Mode. |
+| **Standalone Emulators & Nightlies** | • [Eden](https://git.eden-emu.dev/eden-emu/eden) (Nintendo Switch)<br>• [PCSX2](https://github.com/PCSX2/pcsx2) (PlayStation 2)<br>• [shadPS4](https://github.com/shadps4-emu/shadPS4) (PlayStation 4)<br>• [DuckStation](https://github.com/stenzek/duckstation) (PlayStation 1)<br>• [PPSSPP](https://github.com/hrydgard/ppsspp) (PSP)<br>• [Lime3DS](https://github.com/Lime3DS/Lime3DS) (Nintendo 3DS)<br>• [melonDS](https://github.com/melonDS-emu/melonDS) (Nintendo DS)<br>• [Flycast](https://github.com/flyinghead/flycast) (Dreamcast / Arcade) | Stay on cutting-edge nightly or stable releases with instant in-place updates from GitHub or custom-hosted forges. |
+| **Static Recompilations & Decompilations** | • [Ship of Harkinian](https://github.com/HarbourMasters/Shipwright) (Ocarina of Time PC Port)<br>• [2 Ship 2 Harkinian](https://github.com/HarbourMasters/2ship2harkinian) (Majora's Mask PC Port)<br>• [Zelda 64: Recompiled](https://github.com/Zelda64Recomp/Zelda64Recomp) (Majora's Mask Recomp)<br>• [OpenGOAL / Jak Project](https://github.com/open-goal/jak-project) (Jak and Daxter PC Port)<br>• [Sonic Mania Decompilation](https://github.com/Rubberduckycooly/Sonic-Mania-Decompilation) (Sonic Mania PC Port)<br>• [Fallout 1 Community Edition](https://github.com/alexbatalov/fallout1-ce)<br>• [Fallout 2 Community Edition](https://github.com/alexbatalov/fallout2-ce) | Download standalone native Linux binaries and AppImages with high framerates and Deck controller support without manual desktop extraction. |
+| **Source Ports & Classic PC Ports** | • [DevilutionX](https://github.com/diasurgical/devilutionX) (Diablo 1 + Hellfire)<br>• [GZDoom](https://github.com/ZDoom/gzdoom) (Doom, Heretic, Hexen source port)<br>• [Sonic Robo Blast 2 (SRB2)](https://github.com/STJr/SRB2)<br>• [CorsixTH](https://github.com/CorsixTH/CorsixTH) (Theme Hospital engine)<br>• [Space Cadet Pinball](https://github.com/k4zmu2a/SpaceCadetPinball) (3D Pinball for Windows) | Grab Linux-native packages and play classic PC titles seamlessly on SteamOS. |
+| **Indie Games (itch.io)** | • [Gamma Emerald - EA](https://undreamedpanic.itch.io/gamma-emerald-ea)<br>• Free standalone games and early access builds | Download and play free itch.io game builds directly on SteamOS. |
+| **Homebrew Utilities & Launchers** | • [Heroic Games Launcher](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher) (Epic/GOG/Amazon launcher)<br>• [Moonlight](https://github.com/moonlight-stream/moonlight-qt) (Game Streaming client)<br>• [Chiaki-ng](https://github.com/streetpea/chiaki-ng) (PlayStation Remote Play)<br>• [ProtonUp-Qt](https://github.com/DavidoTek/ProtonUp-Qt) (GE-Proton & Wine tool manager) | Manage standalone AppImages and game streaming tools directly within Game Mode. |
 
 *Asset Preservation Note*: For source ports and decompilations that require original game data files or ROMs, place your asset files into `~/Applications/<AppName>/` once. Future updates performed via Release Deck replace the game binaries while preserving your asset and save files.
 
