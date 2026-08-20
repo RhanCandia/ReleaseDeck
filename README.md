@@ -16,9 +16,9 @@
 
 ## 🌟 Overview
 
-**Release Deck** is a Decky Loader plugin designed for Steam Deck users to discover, download, install, update, and manage open-source game ports, decompilations, emulators, and homebrew utilities directly from the **Quick Access Menu (`...` button)** in **Gaming Mode**.
+**Release Deck** is a Decky Loader plugin designed for Steam Deck users to discover, download, install, update, and manage open-source game ports, decompilations, emulators, indie itch.io games, and homebrew utilities directly from the **Quick Access Menu (`...` button)** in **Gaming Mode**.
 
-Works out-of-the-box with **GitHub by default**, and seamlessly supports **custom-domain Git forges** (Forgejo, Gitea, GitLab, Codeberg, and self-hosted instances).
+Works out-of-the-box with **GitHub by default**, **itch.io** (free games), and seamlessly supports **custom-domain Git forges** (Forgejo, Gitea, GitLab, Codeberg, and self-hosted instances).
 
 No more switching back and forth to Desktop Mode just to:
 - Download `.tar.gz`, `.zip`, `.tar.xz`, or `.AppImage` releases.
@@ -37,12 +37,13 @@ Release Deck is built to be 100% controller-friendly and usable directly from St
 2. Navigate to the **Decky Loader plugin icon** (the plug symbol).
 3. Select **Release Deck**.
 
-### Step 2: Track Your Favorite Repositories
+### Step 2: Track Your Favorite Repositories & Games
 1. Switch to the **Settings** tab.
-2. Under **Tracked Repositories**, add repositories using either format:
+2. Under **Tracked Repositories**, add repositories or itch.io games using any format:
    - **GitHub (Default)**: Type shorthand `owner/repo` (e.g. `shadps4-emu/shadPS4` or `PCSX2/pcsx2`).
+   - **itch.io (Free Games)**: Paste the game URL (e.g. `https://undreamedpanic.itch.io/gamma-emerald-ea` or `undreamedpanic.itch.io/gamma-emerald-ea`).
    - **Custom Git Forges & Domains**: Paste the full URL or domain (e.g. `https://git.eden-emu.dev/eden-emu/eden`, `https://codeberg.org/forgejo/forgejo`, or `https://gitlab.com/inkscape/inkscape`).
-3. Click **Add to Tracked List**. Release Deck automatically detects the forge type, attaches host badges, and saves your configuration.
+3. Click **Add to Tracked List**. Release Deck automatically detects the forge/host type, attaches host badges, and saves your configuration.
 > 💡 *Optional*: If you download frequently from GitHub, add a **GitHub Personal Access Token (PAT)** in Settings to raise your rate limit to 5,000 requests/hr.
 
 ### Step 3: Browse Releases & Download
@@ -86,8 +87,9 @@ Release Deck turns GitHub and custom Git forges into a native game store for you
 
 ### 🌐 **1. Universal Multi-Provider Engine**
 * **GitHub by Default**: Zero-friction typing of `owner/repo` automatically targets GitHub.
+* **itch.io Support**: Direct scraping and dynamic signed CDN URL resolution for free itch.io game pages (e.g. `https://undreamedpanic.itch.io/gamma-emerald-ea`).
 * **Custom Domain Support**: Full support for Forgejo, Gitea, Codeberg, and GitLab instances (e.g. `https://git.eden-emu.dev/eden-emu/eden`).
-* **Auto-Detection & Badging**: Automatically identifies host forges and displays host labels (`[git.eden-emu.dev]`, `[Codeberg]`, `[GitLab]`, `[GitHub]`).
+* **Auto-Detection & Badging**: Automatically identifies host forges and displays host labels (`[itch.io]`, `[git.eden-emu.dev]`, `[Codeberg]`, `[GitLab]`, `[GitHub]`).
 
 ### 🎮 **2. Apps Tab (Installed Packages Manager)**
 * **Collapsible App Cards**: Clean, compact cards that start collapsed by default to comfortably browse large libraries of installed software.

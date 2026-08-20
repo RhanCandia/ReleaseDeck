@@ -8,6 +8,16 @@ export interface GitHubAsset {
   is_recommended: boolean;
 }
 
+export interface ParsedRepoInfo {
+  host: string;
+  owner: string;
+  repo: string;
+  providerType: "github" | "forgejo" | "gitlab" | "itch" | "custom";
+  displayName: string;
+  subtitle: string;
+  canonical: string;
+}
+
 export interface GitHubRelease {
   id: number;
   tag_name: string;

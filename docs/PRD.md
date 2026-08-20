@@ -10,16 +10,16 @@
 ## 1. Executive Summary & Objective
 
 ### 1.1 Problem Statement
-On the Steam Deck, open-source games, emulators, ports, and standalone utilities are frequently distributed as releases across GitHub as well as custom-domain Git forges (such as Forgejo/Gitea instances like `git.eden-emu.dev`, Codeberg, and GitLab). Managing their lifecycle in **Gaming Mode** is cumbersome:
+On the Steam Deck, open-source games, emulators, ports, indie games, and standalone utilities are frequently distributed as releases across GitHub, itch.io, and custom-domain Git forges (such as Forgejo/Gitea instances like `git.eden-emu.dev`, Codeberg, and GitLab). Managing their lifecycle in **Gaming Mode** is cumbersome:
 1. **Initial Installation**: Requires switching to Desktop Mode, downloading archives via browser, extracting them, and setting `chmod +x`.
 2. **Update Tracking & Upgrades**: Users have no visibility in Gaming Mode when their installed packages become outdated, and upgrading requires repeating the entire manual Desktop Mode procedure.
-3. **Multi-Source Package Management**: No centralized interface exists in the Quick Access Menu (`...` button) to inspect installed tools, check versions across different Git hosts, update, or uninstall them.
+3. **Multi-Source Package Management**: No centralized interface exists in the Quick Access Menu (`...` button) to inspect installed tools, check versions across different hosts and platforms, update, or uninstall them.
 
 ### 1.2 Objective
 Create a lightweight **Decky Loader Plugin** that enables users to:
-1. **Discover & Download**: Input GitHub repositories (by default) or custom Git forge URLs (Forgejo, Gitea, Codeberg, GitLab), select versions/assets, and download/extract them directly to a dedicated directory on the Steam Deck (`~/Applications/<PackageName>/`).
+1. **Discover & Download**: Input GitHub repositories (by default), itch.io game pages (free games), or custom Git forge URLs (Forgejo, Gitea, Codeberg, GitLab), select versions/assets, and download/extract them directly to a dedicated directory on the Steam Deck (`~/Applications/<PackageName>/`).
 2. **Manage & Inspect**: View all installed packages, their installed versions, source host origin, disk usage, and installation paths directly within the Quick Access Menu.
-3. **Detect Updates & 1-Click Upgrade**: Automatically check installed packages against their upstream release APIs and provide one-click in-place updates directly in Gaming Mode.
+3. **Detect Updates & 1-Click Upgrade**: Automatically check installed packages against their upstream release APIs or game endpoints and provide one-click in-place updates directly in Gaming Mode.
 
 ---
 
@@ -33,16 +33,17 @@ Create a lightweight **Decky Loader Plugin** that enables users to:
 │   │     [📥 Download Tab]         │     │     [📦 Installed Tab]         │   │
 │   │                               │     │                                │   │
 │   │ • Enter owner/repo (GitHub)   │     │ • List installed packages      │   │
-│   │ • Or paste custom Git URL     │     │ • Show origin host badge       │   │
-│   │ • Browse releases & changelog │     │ • Show current vs latest ver   │   │
-│   │ • Highlight Steam Deck asset  │     │ • "Update Available" badge     │   │
-│   │ • Stream download + extract   │     │ • [Update] [Add to Steam] [Del]│   │
+│   │ • Paste itch.io game URL      │     │ • Show origin host badge       │   │
+│   │ • Or paste custom Git URL     │     │ • Show current vs latest ver   │   │
+│   │ • Browse releases & changelog │     │ • "Update Available" badge     │   │
+│   │ • Highlight Steam Deck asset  │     │ • [Update] [Add to Steam] [Del]│   │
+│   │ • Stream download + extract   │     │ • Custom executable selector   │   │
 │   └──────────────┬────────────────┘     └───────────────┬────────────────┘   │
 └──────────────────┼──────────────────────────────────────┼────────────────────┘
                    ▼                                      ▼
     ┌──────────────────────────────────────────────────────────────────────────┐
     │  Multi-Provider Backend (backend/git_providers.py + main.py)             │
-    │  Supported: GitHub (default), Forgejo/Gitea, Codeberg, GitLab            │
+    │  Supported: GitHub (default), itch.io (free games), Forgejo, GitLab      │
     │  Target: ~/Applications/<PackageName>/                                   │
     └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -50,8 +51,9 @@ Create a lightweight **Decky Loader Plugin** that enables users to:
 ### 2.1 In Scope
 
 #### A. Multi-Provider Release Discovery & Download
-- **Universal Repository Input**: Shorthand `owner/repo` automatically targets GitHub; full URLs or domain paths target custom Git forges (Forgejo, Gitea, Codeberg, GitLab).
-- **Auto-Detection & Badging**: Automatically identifies host forges and renders host labels.
+- **Universal Repository & Game Input**: Shorthand `owner/repo` automatically targets GitHub; `*.itch.io/*` targets itch.io free games; full URLs or domain paths target custom Git forges (Forgejo, Gitea, Codeberg, GitLab).
+- **Auto-Detection & Badging**: Automatically identifies host forges/platforms and renders host labels with branded icons (GitHub, itch.io, GitLab, Forgejo, Codeberg).
+- **Dynamic itch.io CDN Resolution**: Automatically resolves temporary signed Cloudflare R2 / S3 download URLs dynamically on-demand for itch.io free game packages.
 - **Version & Asset Selection**: Browse release tags, view changelogs, and choose specific assets (`.tar.gz`, `.zip`, `.tar.xz`, `.AppImage`).
 - **Async Streaming Downloader**: Background downloading with live progress and speed reporting.
 - **Decompression & Permissions**: Extract to `~/Applications/<PackageName>/` and apply `chmod +x` to binaries.

@@ -24,6 +24,7 @@ import {
   FaBug,
   FaTag,
 } from "react-icons/fa";
+import { SiItchdotio } from "react-icons/si";
 import { Api } from "../api";
 import { PluginSettings } from "../types";
 import { parseRepoSpec } from "../utils/format";
@@ -191,7 +192,7 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", boxSizing: "border-box" }}>
             <TextField
               label="Add Repository"
-              description="Defaults to GitHub for owner/repo. Paste any custom URL (Forgejo, Gitea, Codeberg, GitLab)"
+              description="Defaults to GitHub for owner/repo. Paste any custom URL (itch.io, Forgejo, Codeberg, GitLab)"
               value={newRepo}
               onChange={(e) => {
                 setNewRepo(e.target.value);
@@ -299,6 +300,8 @@ export function SettingsTab({ settings, onSettingsSaved }: SettingsTabProps) {
                     icon = <FaGitlab size={14} color="#fc6d26" style={{ flexShrink: 0 }} />;
                   } else if (info.providerType === "forgejo") {
                     icon = <FaGitAlt size={14} color="#f34f29" style={{ flexShrink: 0 }} />;
+                  } else if (info.providerType === "itch") {
+                    icon = <SiItchdotio size={14} color="#fa5c5c" style={{ flexShrink: 0 }} />;
                   } else if (info.providerType === "custom") {
                     icon = <FaServer size={14} color="#a5d8ff" style={{ flexShrink: 0 }} />;
                   }
